@@ -1,0 +1,173 @@
+/*
+ * Page renderer styles. Import as "@photobook/shared/renderer.css" next to "@photobook/shared/fonts.css".
+ * Positions and sizes are inline (fractions of the page); this file only holds what classes switch on.
+ * Plain CSS on purpose: the viewer has no Tailwind.
+ */
+
+.pb-page {
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.pb-page *,
+.pb-page *::before,
+.pb-page *::after {
+  box-sizing: border-box;
+}
+
+/* Photos */
+
+/* The img inside a <picture> is laid out as if the picture were not there. */
+.pb-picture {
+  display: contents;
+}
+
+.pb-photo-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  transform-origin: center;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.pb-photo-crop {
+  position: absolute;
+  inset: 0;
+  transform-origin: center;
+}
+
+.pb-photo-rot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: center;
+}
+
+.pb-filter-bw {
+  filter: grayscale(1);
+}
+
+.pb-filter-fade {
+  filter: contrast(0.9) saturate(0.85) brightness(1.05);
+}
+
+/* An asset that could not be resolved (missing file, not cached yet). */
+.pb-photo-missing {
+  background-color: rgba(127, 127, 127, 0.18);
+}
+
+/* Empty slots are transparent unless the page is editable. */
+.pb-photo-empty.pb-editable {
+  outline: 1.5px dashed rgba(127, 127, 127, 0.6);
+  outline-offset: -4px;
+  background-color: rgba(127, 127, 127, 0.06);
+}
+
+/* Shaped slots (clip-path): the dashed outline follows the shape instead of the box. */
+.pb-photo-empty.pb-editable.pb-shaped {
+  outline: none;
+}
+
+.pb-shape-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pb-shape-outline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.pb-shape-outline path {
+  fill: none;
+  stroke: rgba(127, 127, 127, 0.6);
+  /* Half of it shows: the clip cuts the outer half at the shape's edge. */
+  stroke-width: 3px;
+  stroke-dasharray: 4px 3px;
+  vector-effect: non-scaling-stroke;
+}
+
+.pb-photo-plus {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 300;
+  font-size: 24px;
+  line-height: 1;
+  color: rgba(127, 127, 127, 0.75);
+  pointer-events: none;
+}
+
+@supports (width: 1cqw) {
+  .pb-photo-plus {
+    font-size: max(14px, 5cqw);
+  }
+}
+
+/* Text */
+
+.pb-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  font-size: var(--pb-fs-px);
+}
+
+@supports (width: 1cqw) {
+  .pb-text {
+    font-size: var(--pb-fs);
+  }
+}
+
+.pb-text-empty.pb-editable {
+  outline: 1px dashed rgba(127, 127, 127, 0.6);
+  outline-offset: -1px;
+}
+
+.pb-text-placeholder {
+  opacity: 0.4;
+}
+
+/* Text over a photo: soft dark gradient, text at the bottom, inset by the safe margin (--pb-pad). */
+.pb-text-overlay {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 var(--pb-pad-px, 8%) var(--pb-pad-px, 8%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.25) 55%, rgba(0, 0, 0, 0));
+}
+
+@supports (width: 1cqw) {
+  .pb-text-overlay {
+    padding: 0 var(--pb-pad, 8cqw) var(--pb-pad, 8cqw);
+  }
+}
+
+/* A grid cell that holds a story. */
+.pb-text-box {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 0.6em;
+}
+
+.pb-pill {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 0.25em 0.6em;
+  border-radius: 999px;
+}

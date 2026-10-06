@@ -1,0 +1,27 @@
+# Dependencies and build output
+node_modules/
+dist/
+target/
+.turbo/
+*.tsbuildinfo
+apps/editor/src-tauri/gen/schemas/
+
+# OS and editor noise
+.DS_Store
+*.log
+.claude/settings.local.json
+
+# Local config and secrets (never commit these)
+.env
+.env.local
+.env.*.local
+.dev.vars
+wrangler.local.toml
+.wrangler/
+.vercel/
+
+# Publish cache next to a project file
+.photobook-publish/
+
+# Generated test photos (scripts/make-sample-trip.py)
+fixtures/sample-trip/

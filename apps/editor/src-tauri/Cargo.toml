@@ -1,0 +1,59 @@
+[package]
+name = "photobook-editor"
+version = "0.1.0"
+description = "Photobook editor"
+edition = "2021"
+rust-version = "1.77.2"
+
+[lib]
+# The `_lib` suffix avoids a name clash with the bin target on Windows.
+name = "photobook_editor_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-shell = "2"
+# Dev logging: webview `info()` calls and Rust `log` macros go to stdout in debug builds.
+tauri-plugin-log = "2"
+log = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Step 1.2: folder scan, hashing, thumbnails and proxies.
+walkdir = "2.5"
+sha2 = "0.10"
+hex = "0.4"
+tokio = { version = "1", features = ["sync"] }
+kamadak-exif = "0.6"
+# 5.x: 6.x needs a newer rust-version than this crate declares.
+fast_image_resize = "5.1"
+# Builds libjpeg-turbo from source with cmake (static, so the app bundle has no Homebrew dylib).
+turbojpeg = { version = "1.5", default-features = false, features = ["cmake", "image", "require-simd"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+# Image decode, resize and hashing are unusably slow unoptimized; keep them fast in dev and tests.
+# This crate is included because fast_image_resize and imageops generics are instantiated here
+# (resize took 630 ms instead of 18 ms at opt-level 0). Incremental builds stay around 2-3 s.
+[profile.dev.package.turbojpeg-sys]
+opt-level = 3
+[profile.dev.package.fast_image_resize]
+opt-level = 3
+[profile.dev.package.image]
+opt-level = 3
+[profile.dev.package.png]
+opt-level = 3
+[profile.dev.package.fdeflate]
+opt-level = 3
+[profile.dev.package.miniz_oxide]
+opt-level = 3
+[profile.dev.package.sha2]
+opt-level = 3
+[profile.dev.package.photobook-editor]
+opt-level = 3

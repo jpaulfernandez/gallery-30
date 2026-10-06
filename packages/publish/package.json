@@ -1,0 +1,30 @@
+{
+  "name": "@photobook/publish",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "photobook": "./bin/photobook.ts"
+  },
+  "scripts": {
+    "photobook": "tsx --conditions=source bin/photobook.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "smoke": "tsx --conditions=source scripts/smoke.ts",
+    "fixtures:make": "tsx --conditions=source fixtures/make.ts"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1146.0",
+    "@photobook/shared": "workspace:*",
+    "playwright": "^1.63.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "sharp": "^0.35.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.1",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
+  }
+}

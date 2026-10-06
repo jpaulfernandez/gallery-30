@@ -1,0 +1,60 @@
+@import "@photobook/shared/fonts.css";
+@import "tailwindcss";
+
+/* Editor chrome tokens from docs/design/DESIGN_NOTES.md. */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Fraunces", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-canvas: #1a1a1a;
+  --color-stage: #0d0d0d;
+  --color-panel: #222222;
+  --color-panel-2: #262626;
+  --color-line: #333333;
+  --color-fg: #e5e5e5;
+  --color-fg-muted: #8a8a8a;
+  --color-accent: #4f8cff;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-canvas text-fg font-sans antialiased;
+    font-size: 13px;
+    overflow: hidden;
+    user-select: none;
+  }
+}
+
+@utility label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-fg-muted);
+}
+
+@utility dot-grid {
+  background-color: var(--color-canvas);
+  background-image: radial-gradient(circle, #2c2c2c 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Canvas cursors: a filled photo slot pans when dragged (Alt + drag moves it to another slot). */
+.editor-canvas .pb-photo.pb-editable:not(.pb-photo-empty) {
+  cursor: grab;
+}
+
+.editor-canvas .pb-photo.pb-editable:not(.pb-photo-empty):active {
+  cursor: grabbing;
+}
+
+/* Text boxes move when dragged; double-click or Enter edits them. */
+.editor-canvas .pb-text.pb-editable {
+  cursor: move;
+}

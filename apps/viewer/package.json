@@ -1,0 +1,26 @@
+{
+  "name": "viewer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/make-dev-fixtures.mjs",
+    "dev": "vite",
+    "fixtures": "node scripts/make-dev-fixtures.mjs --force",
+    "build": "vite build && node scripts/check-bundle.mjs",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "deploy": "pnpm build && node scripts/prepare-deploy.mjs && vercel deploy --prebuilt --prod --yes",
+    "deploy:preview": "pnpm build && node scripts/prepare-deploy.mjs && vercel deploy --prebuilt --yes"
+  },
+  "dependencies": {
+    "@photobook/shared": "workspace:*",
+    "fflate": "^0.8.3",
+    "preact": "^10.27.2"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.6",
+    "typescript": "^5.9.3",
+    "vite": "^6.4.3"
+  }
+}

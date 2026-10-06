@@ -1,0 +1,16 @@
+# Template config. For your own deployment, copy it to `wrangler.local.toml` (git-ignored) and fill in
+# your values; `pnpm run deploy` and `pnpm run db:migrate` use the local file when it exists.
+# Local dev and tests work with this file as is.
+name = "photobook-social"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+workers_dev = true
+# Optional: serve the Worker on a domain in your Cloudflare account instead of *.workers.dev.
+# routes = [{ pattern = "photobook-api.example.com", custom_domain = true }]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "photobook-social"
+# From `pnpm exec wrangler d1 create photobook-social`.
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"

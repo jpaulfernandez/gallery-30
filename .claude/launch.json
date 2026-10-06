@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "viewer",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "viewer", "dev"],
+      "port": 5173
+    },
+    {
+      "name": "viewer-preview",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "viewer", "preview", "--", "--port", "4173", "--strictPort"],
+      "port": 4173
+    }
+  ]
+}

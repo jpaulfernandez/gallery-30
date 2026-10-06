@@ -1,0 +1,1403 @@
+/*
+ * Viewer chrome. Dark stage (#0d0d0d), white Inter UI, translucent blurred pills, matching the
+ * editor's preview chrome (apps/editor/src/components/preview). The page itself is styled by the
+ * shared renderer (renderer.css); everything here is around it.
+ */
+
+:root {
+  color-scheme: dark;
+  --pv-bg: #0d0d0d;
+  --pv-panel: #141414;
+  --pv-line: #262626;
+  --pv-fg: #ffffff;
+  --pv-muted: #8a8a8a;
+  --pv-accent: #4f8cff;
+  --pv-heart: #ff5470;
+  --pv-pill: rgba(0, 0, 0, 0.55);
+  --pv-font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: var(--pv-bg);
+  color: var(--pv-fg);
+  font-family: var(--pv-font);
+  font-size: 13px;
+  line-height: 1.4;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+  /* No browser double-tap zoom: the page has its own pinch and double tap. */
+  touch-action: manipulation;
+}
+
+/* The app owns the viewport: fixed, so iOS toolbar changes do not reflow the track. */
+#app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+button,
+input {
+  font: inherit;
+  color: inherit;
+}
+
+/* --- Shared bits -------------------------------------------------------------------------- */
+
+.pv-pill {
+  background: var(--pv-pill);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: var(--pv-fg);
+  border: 0;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pv-pill:focus-visible,
+.pv-button:focus-visible,
+.pv-input:focus-visible,
+.lb-btn:focus-visible,
+.lb-action:focus-visible,
+.lb-thumb:focus-visible,
+.pv-grid-cell:focus-visible,
+.pv-photo-cell:focus-visible,
+.pv-card:focus-visible,
+.pv-chip:focus-visible,
+.pv-handle:focus-visible,
+.pv-collect:focus-visible,
+.pv-icon-btn:focus-visible,
+.pv-link:focus-visible,
+.pv-sheet-grip:focus-visible,
+.pv-coll-thumb:focus-visible {
+  outline: 2px solid var(--pv-accent);
+  outline-offset: 2px;
+}
+
+.pv-button {
+  display: inline-block;
+  background: var(--pv-fg);
+  color: #000;
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 18px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.pv-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pv-button-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+}
+
+/* Secondary text button (Skip, Cancel, Got it). */
+.pv-link {
+  min-height: 44px;
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  color: var(--pv-muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Outlined pill button on dark panels: 44 px tall for thumbs. */
+.pv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--pv-fg);
+  font-weight: 500;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.pv-chip[aria-busy="true"] {
+  opacity: 0.7;
+}
+
+.pv-chip-icon {
+  width: 44px;
+  padding: 0;
+  justify-content: center;
+}
+
+.pv-chip.is-danger {
+  color: #ff8a8a;
+  border-color: rgba(255, 138, 138, 0.45);
+}
+
+.pv-like.is-on,
+.lb-like.is-on {
+  color: var(--pv-heart);
+}
+
+.pv-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--pv-fg);
+  color: #000;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-badge.is-empty {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--pv-muted);
+}
+
+.pv-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-icon {
+  flex-shrink: 0;
+}
+
+.pv-icon-btn {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--pv-muted);
+  cursor: pointer;
+}
+
+.pv-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 16px; /* 16 px: iOS does not zoom the field */
+  outline: none;
+}
+
+.pv-input:focus {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.pv-input.is-wrong {
+  border-color: #e5484d;
+}
+
+.pv-center {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: calc(24px + var(--sat)) calc(24px + var(--sar)) calc(24px + var(--sab)) calc(24px + var(--sal));
+  text-align: center;
+  color: var(--pv-muted);
+}
+
+.pv-center p {
+  margin: 0;
+}
+
+.pv-big {
+  color: var(--pv-fg);
+  font-size: 17px;
+}
+
+.pv-error {
+  max-width: 520px;
+  color: #ff8a8a;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 12px;
+}
+
+.pv-muted {
+  color: var(--pv-muted);
+  margin: 0;
+}
+
+.pv-label {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pv-muted);
+}
+
+.pv-toast {
+  position: absolute;
+  top: calc(16px + var(--sat));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  background: var(--pv-pill);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  border-radius: 999px;
+  padding: 8px 14px;
+  animation: pv-fade-in 200ms ease-out;
+  pointer-events: none;
+}
+
+.pv-toast-top {
+  position: fixed;
+  z-index: 80;
+  top: calc(64px + var(--sat));
+  max-width: calc(100% - 32px);
+  width: max-content;
+  text-align: center;
+}
+
+@keyframes pv-fade-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* --- Book list (root) --------------------------------------------------------------------- */
+
+.pv-list {
+  height: 100%;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 24px 16px;
+  align-content: start;
+  padding: calc(24px + var(--sat)) calc(16px + var(--sar)) calc(24px + var(--sab)) calc(16px + var(--sal));
+}
+
+.pv-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.pv-card-cover {
+  display: block;
+  aspect-ratio: 4 / 5;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #1a1a1a;
+}
+
+.pv-card-cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pv-card-title {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.pv-card-meta {
+  display: block;
+  color: var(--pv-muted);
+  font-size: 12px;
+}
+
+/* --- Password gate ------------------------------------------------------------------------ */
+
+.pv-gate {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 24px;
+}
+
+.pv-gate-cover {
+  position: absolute;
+  inset: -6%;
+  background-size: cover;
+  background-position: center;
+  filter: blur(28px) brightness(0.45);
+  transform: scale(1.05);
+}
+
+.pv-gate-form {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  width: min(320px, 100%);
+  text-align: center;
+}
+
+.pv-gate-title {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.pv-gate-error {
+  margin: 0;
+  min-height: 1.4em;
+  color: #ff8a8a;
+}
+
+/* --- Reader ------------------------------------------------------------------------------- */
+
+.pv-book {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.pv-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
+.pv-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  /* Horizontal pans scroll the track; vertical ones and pinches reach the page's own handlers. */
+  touch-action: pan-x;
+}
+
+.pv-track::-webkit-scrollbar {
+  display: none;
+}
+
+/* Zoomed in: the page pans under the finger, the track does not move. */
+.pv-track.is-zoomed {
+  overflow-x: hidden;
+  scroll-snap-type: none;
+}
+
+.pv-slide-wrap {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.pv-slide {
+  position: relative; /* offsetParent of .pv-zoom (see lib/pinch.ts) */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.pv-zoom {
+  flex: 0 0 auto;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.pv-bar {
+  position: absolute;
+  left: 50%;
+  bottom: calc(16px + var(--sab));
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  gap: 8px;
+}
+
+.pv-pill .pv-glyph {
+  vertical-align: -2px;
+  margin-right: 6px;
+  opacity: 0.85;
+}
+
+.pv-pill-likes {
+  margin-left: 10px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.pv-pill-likes .pv-glyph {
+  margin-right: 4px;
+  color: var(--pv-heart);
+  opacity: 1;
+}
+
+/* Phones: the drawer handle sits under the pills, so they move up a little. */
+@media (max-width: 900px) {
+  .pv-bar {
+    bottom: calc(26px + var(--sab));
+  }
+}
+
+/* Always visible (it does not fade with the controls): tap or swipe up to open the drawer. */
+.pv-handle {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  z-index: 19;
+  width: 160px;
+  height: calc(48px + var(--sab));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 0 calc(9px + var(--sab));
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.pv-handle-grip {
+  display: block;
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* The controls fade out while reading and come back on any touch, move or page turn. */
+.pv-chrome {
+  opacity: 1;
+  transition: opacity 240ms ease-out;
+}
+
+.pv-chrome.is-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Mouse and keyboard devices: arrows at the edges (touch devices swipe or tap the edges). */
+.pv-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 20;
+  width: 44px;
+  height: 44px;
+  margin-top: -22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pv-pill);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  color: var(--pv-fg);
+  cursor: pointer;
+}
+
+.pv-arrow:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.pv-arrow-prev {
+  left: calc(12px + var(--sal));
+  transform: scaleX(-1);
+}
+
+.pv-arrow-next {
+  right: calc(12px + var(--sar));
+}
+
+/* --- First-open guide --------------------------------------------------------------------- */
+
+.pv-guide {
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  animation: pv-fade 200ms ease-out;
+}
+
+@keyframes pv-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.pv-guide-card {
+  width: min(340px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  border-radius: 16px;
+  background: rgba(20, 20, 20, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pv-guide-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.pv-guide-list li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pv-guide-list svg {
+  flex-shrink: 0;
+  color: var(--pv-muted);
+}
+
+.pv-guide-list strong {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Drawer (phones): bottom sheet ------------------------------------------------------ */
+
+.pv-sheet-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+}
+
+.pv-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  animation: pv-fade 180ms ease-out;
+}
+
+.pv-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: min(80%, 640px);
+  padding: 0 var(--sar) var(--sab) var(--sal);
+  border-radius: 16px 16px 0 0;
+  border-top: 1px solid var(--pv-line);
+  background: var(--pv-panel);
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
+  outline: none;
+  animation: pv-sheet-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes pv-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.pv-sheet-grab {
+  flex-shrink: 0;
+  touch-action: none;
+}
+
+.pv-sheet-grip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.pv-sheet-grip span {
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: #4a4a4a;
+}
+
+.pv-sheet-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 16px 20px;
+}
+
+/* --- Page panel: drawer and side panel content ------------------------------------------ */
+
+.pv-pp {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pv-pp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pv-pp-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-pp-actions,
+.pv-share-menu {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pv-pp-cell {
+  position: relative;
+}
+
+/* Add to collection on each thumbnail: a 44 px target in the corner, a 26 px dot inside. */
+.pv-collect {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 0 6px 6px 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.pv-collect-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.85);
+}
+
+.pv-collect.is-on .pv-collect-dot {
+  background: var(--pv-accent);
+  box-shadow: 0 0 0 1.5px var(--pv-accent);
+}
+
+/* --- Name prompt -------------------------------------------------------------------------- */
+
+.pv-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: calc(16vh + var(--sat)) 24px 24px;
+  background: rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  animation: pv-fade 180ms ease-out;
+}
+
+.pv-modal-card {
+  width: min(340px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px 24px 12px;
+  border-radius: 16px;
+  background: rgba(20, 20, 20, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pv-modal-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 500;
+}
+
+/* --- Collection --------------------------------------------------------------------------- */
+
+.pv-coll-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: flex;
+  justify-content: center;
+}
+
+.pv-coll-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  animation: pv-fade 180ms ease-out;
+}
+
+.pv-coll {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding-top: var(--sat);
+  background: var(--pv-bg);
+}
+
+@media (min-width: 901px) {
+  .pv-coll-wrap {
+    align-items: center;
+    padding: 32px;
+  }
+
+  .pv-coll {
+    width: min(520px, 100%);
+    height: auto;
+    max-height: min(760px, 100%);
+    padding-top: 0;
+    border: 1px solid var(--pv-line);
+    border-radius: 16px;
+    background: var(--pv-panel);
+    overflow: hidden;
+  }
+}
+
+.pv-coll-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px calc(8px + var(--sar)) 12px calc(16px + var(--sal));
+  border-bottom: 1px solid var(--pv-line);
+}
+
+.pv-coll-head > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.pv-coll-clear.is-danger {
+  color: #ff8a8a;
+}
+
+.pv-coll-title {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.lb-btn.pv-coll-close {
+  position: static;
+  flex-shrink: 0;
+}
+
+.pv-coll-list {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.pv-coll-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px calc(8px + var(--sar)) 6px calc(16px + var(--sal));
+}
+
+.pv-coll-thumb {
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #1f1f1f;
+  cursor: pointer;
+}
+
+.pv-coll-meta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pv-coll-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.pv-coll-meta .pv-muted {
+  font-size: 12px;
+}
+
+.pv-coll-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 32px;
+  color: var(--pv-muted);
+  text-align: center;
+}
+
+.pv-coll-empty p {
+  margin: 0;
+  max-width: 260px;
+}
+
+.pv-coll-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px calc(16px + var(--sar)) calc(16px + var(--sab)) calc(16px + var(--sal));
+  border-top: 1px solid var(--pv-line);
+}
+
+.pv-coll-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #cfcfcf;
+  font-size: 12.5px;
+}
+
+.pv-coll-error {
+  margin: 0;
+  color: #ff8a8a;
+}
+
+.pv-coll-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pv-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pv-progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pv-progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.pv-progress-bar span {
+  display: block;
+  height: 100%;
+  background: var(--pv-fg);
+  transition: width 160ms linear;
+}
+
+/* --- Jump grid ---------------------------------------------------------------------------- */
+
+.pv-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  overflow-y: auto;
+  background: rgba(13, 13, 13, 0.95);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  padding: calc(16px + var(--sat)) calc(16px + var(--sar)) calc(72px + var(--sab)) calc(16px + var(--sal));
+}
+
+.pv-grid-close {
+  position: fixed;
+  top: calc(12px + var(--sat));
+  right: calc(12px + var(--sar));
+  z-index: 1;
+}
+
+.pv-grid-cells {
+  display: grid;
+}
+
+.pv-grid-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--pv-muted);
+  cursor: pointer;
+}
+
+.pv-grid-page {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 3px;
+  outline: 1px solid #333;
+}
+
+.pv-grid-cell.is-current .pv-grid-page {
+  outline: 2px solid var(--pv-accent);
+  outline-offset: 2px;
+}
+
+.pv-grid-number {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-grid-cell.is-current .pv-grid-number {
+  color: var(--pv-accent);
+}
+
+/* --- Thumbnails (side panel, lightbox strip) ---------------------------------------------- */
+
+.pv-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.pv-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background-size: cover;
+  background-position: center;
+}
+
+/* --- Side panel (> 900 px) ---------------------------------------------------------------- */
+
+.pv-aside {
+  display: none;
+}
+
+@media (min-width: 901px) {
+  .pv-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 360px;
+    flex-shrink: 0;
+    height: 100%;
+    overflow-y: auto;
+    padding: calc(20px + var(--sat)) calc(20px + var(--sar)) calc(20px + var(--sab)) 20px;
+    background: var(--pv-panel);
+    border-left: 1px solid var(--pv-line);
+  }
+}
+
+.pv-aside-head {
+  margin-bottom: 8px;
+}
+
+.pv-aside-title {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 500;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.pv-aside-meta {
+  margin: 4px 0 0;
+  color: var(--pv-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pv-aside-hint {
+  font-size: 12px;
+}
+
+.pv-photo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pv-photo-cell {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #1f1f1f;
+  cursor: pointer;
+}
+
+/* --- Lightbox ----------------------------------------------------------------------------- */
+
+.lb {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  color: var(--pv-fg);
+}
+
+.lb-track {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  touch-action: pan-x pinch-zoom;
+}
+
+.lb-track::-webkit-scrollbar {
+  display: none;
+}
+
+.lb-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  padding: calc(56px + var(--sat)) var(--sar) 8px var(--sal);
+}
+
+/* Nothing is drawn over the image: the iPhone long press must hit it. */
+.lb-img {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  background-size: cover;
+  background-position: center;
+}
+
+.lb-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: calc(56px + var(--sat));
+  padding: var(--sat) calc(12px + var(--sar)) 0 calc(12px + var(--sal));
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0));
+  pointer-events: none;
+}
+
+.lb-top > * {
+  pointer-events: auto;
+}
+
+.lb-btn {
+  position: absolute;
+  left: calc(8px + var(--sal));
+  top: calc(6px + var(--sat));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pv-pill);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+}
+
+.lb-btn-right {
+  left: auto;
+  right: calc(8px + var(--sar));
+}
+
+.lb-btn-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--pv-fg);
+  color: #000;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 18px;
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-counter {
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.lb-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px calc(12px + var(--sar)) calc(12px + var(--sab)) calc(12px + var(--sal));
+}
+
+.lb-strip {
+  list-style: none;
+  margin: 0 auto;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 2px;
+  /* Centre when they fit, scroll when they do not. */
+  max-width: 100%;
+}
+
+.lb-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.lb-thumb {
+  flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #1f1f1f;
+  opacity: 0.55;
+  cursor: pointer;
+}
+
+.lb-thumb.is-current {
+  opacity: 1;
+  outline: 2px solid var(--pv-fg);
+  outline-offset: 1px;
+}
+
+.lb-actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 4px;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+}
+
+/* Icon over a short label, like a tab bar: 56 px tall targets under the photo, never over it. */
+.lb-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 56px;
+  padding: 6px 4px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--pv-fg);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.lb-action span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.lb-action:active {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.lb-action.is-on:not(.lb-like) {
+  color: var(--pv-accent);
+}
+
+.lb-action[aria-busy="true"],
+.lb-action[aria-disabled="true"] {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.lb-action:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Page image fallback: one wide Download pill. */
+.lb-action-wide {
+  flex-direction: row;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 20px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  font-size: 13px;
+}
+
+.lb-image .lb-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.lb-single {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(56px + var(--sat)) var(--sar) 8px var(--sal);
+}
+
+.lb-note {
+  margin: 0;
+  color: #cfcfcf;
+  font-size: 12.5px;
+  text-align: center;
+}
+
+/* One-time iPhone hint after the first Download: in the bottom bar, not over the photo. */
+.lb-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 auto;
+  max-width: 100%;
+  padding: 2px 4px 2px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 13px;
+  animation: pv-fade 200ms ease-out;
+}
+
+.lb-hint .pv-link {
+  flex-shrink: 0;
+  color: var(--pv-fg);
+  font-weight: 500;
+  white-space: nowrap;
+}

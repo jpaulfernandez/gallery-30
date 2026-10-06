@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["bin", "src", "scripts", "fixtures/**/*.ts", "../shared/src/**/*.tsx"],
+  "exclude": ["**/node_modules", "../shared/src/**/*.test.tsx"]
+}
