@@ -16,6 +16,8 @@ packages, the crates, the CLI and the bundle identifier `com.photobook.editor` k
   `docs/design/plans/IMPLEMENTATION_PLAN_38-56.md` holds the locked decisions, waves and file ownership for 38–56.
   Finished plans in `docs/design/archive/` explain why the code is the way it is.
 - **User docs**: `README.md`, `docs/INSTALLATION.md`, `docs/DEVELOP.md`, `docs/PUBLISHING.md`, `docs/ACCOUNTS.md`.
+- **Engineering docs**: `docs/design/EDITING.md` (how the develop pipeline works, end to end) and
+  `docs/design/DENOISING.md` (the denoise pipeline, measured results, and the Lightroom comparison).
 
 ## Packages
 

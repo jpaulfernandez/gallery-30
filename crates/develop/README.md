@@ -556,7 +556,7 @@ per photo and settings key and the develop pipeline then decodes the result inst
   decode it exactly (65,536-entry table; round trip within 1/65535 of the encoded value);
   `intermediate_ready(path, key)`, `prune_intermediates(dir, keep)`.
 - **Editor** (`commands/develop.rs`): `<appdata>/cache/<hash>/develop/denoise-<key>.png` plus a 1600 px
-  `denoise-<key>-proxy.png` for the working proxy; only the current key's files are kept per photo. Commands
+  `denoise-<key>-proxy.png` for the working proxy; the three most recent keys' files are kept per photo (`KEEP_DENOISE_KEYS`). Commands
   `denoise_status`, `run_denoise` (progress `develop:denoise-progress`), `cancel_denoise`, `preview_denoise_crop`;
   `render_develop_cached` reports `denoiseStale` while the intermediate is missing; the render's meta file records
   which denoise file (if any) it was made from, and a cached render made from another input is redone.

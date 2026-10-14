@@ -485,8 +485,8 @@ numbers here refer to `docs/design/archive/plans/`.
 | `<appdata>/cache/<hash>/`                                                   | `{proxy,thumb}-<dh>[-p3].jpg` + `develop-<dh>.json` (developed; `dh` = develop hash, 3 kept)   |
 | `<appdata>/cache/<hash>/histogram[-<dh>[-p3]].json`                         | The proxy's 4 × 256 bins (plan 52; pruned with its develop hash)                               |
 | `<appdata>/cache/<hash>/noise.json`                                         | The photo's measured noise curve + make / model / ISO (plan 23)                                |
-| `<appdata>/cache/develop/masks/`                                            | `<componentHash>.png` and `depth-*.png` (AI masks)                                             |
-| `<appdata>/cache/develop/`                                                  | `denoise-<key>[-proxy].png` (+ `.json`; 3 keys kept per photo)                                 |
+| `<appdata>/cache/<hash>/develop/masks/`                                     | `<componentHash>.png` and `depth-*.png` (AI masks)                                             |
+| `<appdata>/cache/<hash>/develop/`                                           | `denoise-<key>[-proxy].png` (+ `.json`; 3 keys kept per photo)                                 |
 | `<appdata>/cache/looks/`                                                    | `<baseDh>-<presetKey>-<dh16>.jpg` (240 px Looks strip thumbnails, plan 20; last 3 bases kept)  |
 | `<appdata>/models/<name>/<version>/`                                        | Downloaded AI models                                                                           |
 | `<appdata>/presets/<ULID>.json`                                             | Saved develop presets                                                                          |
