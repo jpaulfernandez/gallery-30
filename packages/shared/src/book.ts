@@ -16,24 +16,24 @@ import { DEFAULT_TEMPLATE, templateFor } from './templates.js';
 
 export interface CreateEmptyBookOptions {
   title: string;
-  /** Absolute path of the photo folder the book lives in. */
-  sourceFolder: string;
+  /** The photo folders the book draws from, by id (`Book.folders`); assets name one of them. */
+  folders: Book['folders'];
   /** Template name or a full template (for `custom`). Defaults to phone portrait. */
   template?: BookTemplateName | BookTemplate;
 }
 
 /** A blank page: no elements, `layout: 'blank'`. Pick a layout to add slots. */
 export function createEmptyPage(background = '#ffffff'): Page {
-  return { id: newId(), layout: LAYOUT_BLANK, background, elements: [] };
+  return { id: newId(), layout: LAYOUT_BLANK, background, elements: [], guides: [] };
 }
 
-export function createEmptyBook({ title, sourceFolder, template = DEFAULT_TEMPLATE }: CreateEmptyBookOptions): Book {
+export function createEmptyBook({ title, folders, template = DEFAULT_TEMPLATE }: CreateEmptyBookOptions): Book {
   const theme = ThemeSchema.parse({});
   const book: Book = {
     version: CURRENT_VERSION,
     id: newId(),
     title,
-    sourceFolder,
+    folders,
     template: typeof template === 'string' ? templateFor(template) : template,
     theme,
     assets: {},
@@ -43,8 +43,12 @@ export function createEmptyBook({ title, sourceFolder, template = DEFAULT_TEMPLA
       visibility: 'unlisted',
       lastPublishedAt: null,
       r2Prefix: randomToken(5),
+      password: null,
     },
     customLayouts: [],
+    outputProfile: 'srgb',
+    outputs: [],
+    captions: {},
   };
   // Cheap guard that the factory and the schema never drift apart.
   return BookSchema.parse(book);

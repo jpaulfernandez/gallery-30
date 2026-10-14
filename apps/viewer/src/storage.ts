@@ -28,8 +28,11 @@ function write(storage: () => Storage, key: string, value: string): void {
 const local = () => window.localStorage;
 const session = () => window.sessionStorage;
 
-export function readGrant(): AccessGrant | null {
-  const raw = read(local, ACCESS_KEY);
+/** Where a grant is kept: per book id, or the bare key for the legacy site-wide password. */
+const accessKey = (bookId: string | null): string => (bookId ? `${ACCESS_KEY}.${bookId}` : ACCESS_KEY);
+
+export function readGrant(bookId: string | null): AccessGrant | null {
+  const raw = read(local, accessKey(bookId));
   if (!raw) return null;
   try {
     const value: unknown = JSON.parse(raw);
@@ -47,8 +50,8 @@ export function readGrant(): AccessGrant | null {
   return null;
 }
 
-export function writeGrant(grant: AccessGrant): void {
-  write(local, ACCESS_KEY, JSON.stringify(grant));
+export function writeGrant(bookId: string | null, grant: AccessGrant): void {
+  write(local, accessKey(bookId), JSON.stringify(grant));
 }
 
 /** Last page read in a book (1-based), or null. */

@@ -12,6 +12,18 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "viewer", "preview", "--", "--port", "4173", "--strictPort"],
       "port": 4173
+    },
+    {
+      "name": "editor-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "editor", "dev"],
+      "port": 1420
+    },
+    {
+      "name": "site",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "4323", "--directory", "apps/site/public"],
+      "port": 4323
     }
   ]
 }

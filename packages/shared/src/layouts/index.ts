@@ -1,4 +1,19 @@
 export {
+  type AlignEdge,
+  alignFrames,
+  distributeFrames,
+  type FrameRecord,
+  frameLines,
+  gapSpread,
+  lineGaps,
+  lineOverlaps,
+  type MatchDimension,
+  matchFrames,
+  type TidyOptions,
+  tidyFrames,
+  tidyLine,
+} from './align.js';
+export {
   applyLayout,
   KEY_TEXT_SIZE,
   type LayoutTextFrame,
@@ -36,9 +51,12 @@ export {
   LIBRARY_PAGE,
 } from './library.js';
 export {
+  equalSpacingCandidates,
   type GapSide,
   GUIDE_PAGE_WIDTH_IN,
+  type GuideSpan,
   inchFraction,
+  pageGuideLines,
   SNAP_STRENGTH,
   type SnapAxis,
   type SnapFrameOptions,
@@ -47,6 +65,7 @@ export {
   type SnapKind,
   type SnapLine,
   type SnapTheme,
+  sizeMatchCandidates,
   snapCandidates,
   snapFrame,
   snapGap,

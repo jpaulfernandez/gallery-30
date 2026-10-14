@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useMemo, useState } from 'react';
 import { useBookStore } from '../../store/book';
+import { useDesignBook } from '../../store/design';
 import { useUiStore } from '../../store/ui';
 import { CustomLayoutMenu, GridOfFramesButton } from '../editor/FramePopovers';
 import { CardGrid, DraggableLayoutCard } from './LayoutCard';
@@ -13,7 +14,7 @@ import { customLayouts, groupLayouts, LAYOUT_COUNTS, type LayoutCountFilter } fr
  * delete).
  */
 export function LayoutsPanel() {
-  const book = useBookStore((s) => s.book);
+  const book = useDesignBook();
   const applyLayout = useBookStore((s) => s.applyLayout);
   const pageIndex = useUiStore((s) => s.pageIndex);
   const [filter, setFilter] = useState<LayoutCountFilter>('all');
@@ -52,14 +53,17 @@ export function LayoutsPanel() {
             aria-checked={filter === value}
             onClick={() => setFilter(value)}
             className={`h-6 min-w-6 flex-1 rounded px-1.5 text-[11px] tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-              filter === value ? 'bg-line text-fg' : 'text-fg-muted hover:bg-white/5 hover:text-fg'
+              filter === value ? 'bg-line text-fg' : 'text-fg-muted hover:bg-fg/5 hover:text-fg'
             }`}
           >
             {value === 'all' ? 'All' : value}
           </button>
         ))}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4" data-testid="layouts-panel">
+      <div
+        className="min-h-0 flex-1 scrollbar overflow-x-hidden overflow-y-auto [scrollbar-gutter:stable] px-2 pb-4"
+        data-testid="layouts-panel"
+      >
         {groups.map((group) => (
           <section key={group.photos} aria-label={`${group.photos} ${group.photos === 1 ? 'photo' : 'photos'}`}>
             {filter === 'all' && (
@@ -85,7 +89,7 @@ export function LayoutsPanel() {
             {pageId && (
               <GridOfFramesButton
                 pageId={pageId}
-                className="rounded-md px-1.5 py-0.5 text-[11px] text-fg-muted outline-none hover:bg-white/5 hover:text-fg focus-visible:ring-2 focus-visible:ring-accent"
+                className="rounded-md px-1.5 py-0.5 text-[11px] text-fg-muted outline-none hover:bg-fg/5 hover:text-fg focus-visible:ring-2 focus-visible:ring-accent"
               />
             )}
           </div>
@@ -116,7 +120,7 @@ export function LayoutsPanel() {
 function Subgroup({ title, count, children }: { title: string; count: number; children: ReactNode }) {
   return (
     <div className="mt-2">
-      <h4 className="label mb-1 flex items-baseline gap-1.5 px-1">
+      <h4 className="section-title mb-1 flex items-baseline gap-1.5 px-1">
         {title}
         <span className="normal-case tracking-normal">{count}</span>
       </h4>

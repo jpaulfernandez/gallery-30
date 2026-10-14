@@ -9,8 +9,10 @@ import {
   saveLayoutBlocker,
 } from '../../lib/frames';
 import { useBookStore } from '../../store/book';
+import { currentDesignBook, useDesignBook } from '../../store/design';
 import { useUiStore } from '../../store/ui';
 import { LayoutThumb } from '../layouts/LayoutThumb';
+import { buttonClass } from '../ui/Button';
 import { MoreIcon } from './icons';
 import { inputClass } from './inspectorUi';
 import { PopoverButton } from './Popover';
@@ -19,13 +21,12 @@ import { PopoverButton } from './Popover';
 let lastGrid: Required<FrameGridOptions> = { cols: 2, rows: 2, wide: false, bleed: false };
 
 const primaryButton =
-  'rounded-md bg-accent px-3 py-1 font-medium text-white text-xs hover:bg-accent/90 disabled:opacity-50 disabled:hover:bg-accent';
+  'rounded-md bg-accent px-3 py-1 font-medium text-accent-ink text-xs hover:bg-accent/90 disabled:opacity-50 disabled:hover:bg-accent';
 const segment = (active: boolean) =>
   `rounded px-2 py-1 text-[11px] ${active ? 'bg-line text-fg' : 'text-fg-muted hover:text-fg'}`;
 
 function Stepper({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
-  const button =
-    'flex size-6 items-center justify-center rounded-md border border-line text-fg hover:border-accent disabled:opacity-40 disabled:hover:border-line';
+  const button = buttonClass({ size: 'sm', iconOnly: true });
   return (
     <div className="flex items-center justify-between gap-3">
       <span className="text-fg-muted">{label}</span>
@@ -57,7 +58,7 @@ function Stepper({ label, value, onChange }: { label: string; value: number; onC
 }
 
 function GridForm({ pageId, close }: { pageId: string; close: () => void }) {
-  const book = useBookStore((s) => s.book);
+  const book = useDesignBook();
   const addFrameGrid = useBookStore((s) => s.addFrameGrid);
   const [opts, setOpts] = useState(lastGrid);
   const theme = useMemo(() => resolveTheme(book?.theme), [book?.theme]);
@@ -233,7 +234,7 @@ export function SaveAsLayoutButton({ page, className }: { page: Page; className?
             action="Save layout"
             close={close}
             onSubmit={(name) => {
-              const current = useBookStore.getState().book?.pages.find((p) => p.id === page.id);
+              const current = currentDesignBook()?.pages.find((p) => p.id === page.id);
               const data = current ? pageToLayoutData(current, name) : null;
               if (data) useBookStore.getState().addCustomLayout(data, page.id);
             }}
@@ -254,7 +255,7 @@ export function CustomLayoutMenu({ layout }: { layout: LayoutData }) {
       panelLabel={`Layout ${layout.name}`}
       width={220}
       alignEnd
-      className="flex size-6 items-center justify-center rounded-md border border-line bg-panel-2/95 text-fg opacity-0 shadow-black/30 shadow-sm transition-opacity hover:border-accent focus-visible:opacity-100 group-hover/card:opacity-100 aria-expanded:opacity-100"
+      className={`${buttonClass({ size: 'sm', iconOnly: true })} bg-panel-3 opacity-0 shadow-raised hover:bg-panel-3 focus-visible:opacity-100 group-hover/card:opacity-100 aria-expanded:opacity-100`}
     >
       {(close) => (
         <div className="space-y-3">
@@ -271,7 +272,7 @@ export function CustomLayoutMenu({ layout }: { layout: LayoutData }) {
                 useBookStore.getState().removeCustomLayout(layout.id);
                 close();
               }}
-              className="w-full rounded-md px-2 py-1 text-left text-red-400 hover:bg-red-500/10"
+              className="w-full rounded-md px-2 py-1 text-left text-danger hover:bg-danger/10"
             >
               Delete layout
             </button>

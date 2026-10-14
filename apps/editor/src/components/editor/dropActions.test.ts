@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { photoDropFrame } from '../../lib/frames';
 import { useAssetsStore } from '../../store/assets';
 import { undo, useBookStore } from '../../store/book';
+import { photoKey, useLibraryStore } from '../../store/library';
 import { useUiStore } from '../../store/ui';
 import { layoutDndId } from './dnd';
 import { handleDrop } from './dropActions';
@@ -142,5 +143,67 @@ describe('photo drops on the page (outside any slot)', () => {
       { kind: 'page-drop', pageId: page.id },
     );
     expect(book()).toBe(before);
+  });
+});
+
+describe('Library tab drops', () => {
+  const F = '01K7F000000000000000000000';
+  beforeEach(() => {
+    useLibraryStore.setState({
+      folders: {
+        [F]: {
+          id: F,
+          path: '/elsewhere',
+          photos: {
+            'x.jpg': {
+              relPath: 'x.jpg',
+              size: 9,
+              mtime: 3,
+              kind: 'jpeg',
+              hash: 'hx',
+              width: 900,
+              height: 600,
+              status: 'ready',
+            },
+            'y.jpg': { relPath: 'y.jpg', size: 9, mtime: 3, kind: 'jpeg', status: 'hashing' },
+          },
+          progress: { hashed: 1, prepared: 1, total: 2 },
+          busy: true,
+          error: null,
+          scanned: false,
+        },
+      },
+    });
+  });
+  afterEach(() => useLibraryStore.getState().reset());
+
+  it('adds a library photo to the project (its folder too) and puts it in the slot', () => {
+    const page = book().pages[0];
+    const slot = page?.elements.find((e) => e.type === 'photo');
+    if (!page || !slot) throw new Error('fixture has no slot');
+    handleDrop(
+      { kind: 'library', key: photoKey({ folder: F, path: 'x.jpg' }) },
+      { kind: 'slot', pageId: page.id, elementId: slot.id },
+    );
+    const placed = book().pages[0]?.elements.find((e) => e.id === slot.id) as PhotoElement | undefined;
+    const asset = placed?.asset ? book().assets[placed.asset] : undefined;
+    expect(asset).toMatchObject({ path: 'x.jpg', hash: 'hx', folder: F, width: 900 });
+    expect(book().folders[F]).toEqual({ path: '/elsewhere' });
+    // Dropping it again reuses the asset.
+    const count = Object.keys(book().assets).length;
+    handleDrop({ kind: 'library', key: photoKey({ folder: F, path: 'x.jpg' }) }, { kind: 'page-bg', pageId: page.id });
+    expect(Object.keys(book().assets)).toHaveLength(count);
+  });
+
+  it('ignores a photo that is not hashed yet, and drops that place nothing', () => {
+    const page = book().pages[0];
+    if (!page) throw new Error('no page');
+    const before = book().assets;
+    handleDrop(
+      { kind: 'library', key: photoKey({ folder: F, path: 'y.jpg' }) },
+      { kind: 'page-drop', pageId: page.id },
+    );
+    handleDrop({ kind: 'library', key: photoKey({ folder: F, path: 'x.jpg' }) }, { kind: 'page', pageId: page.id });
+    expect(book().assets).toBe(before);
   });
 });

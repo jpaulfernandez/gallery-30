@@ -9,6 +9,8 @@ import {
   type PhotoStats,
   relativeTime,
 } from '../../lib/activity';
+import { Button } from '../ui/Button';
+import { EmptyState } from '../ui/EmptyState';
 import { AssetThumb } from './AssetThumb';
 import type { BookLookup } from './lookup';
 
@@ -29,7 +31,7 @@ export function Card({
   return (
     <section className={`rounded-lg border border-line bg-panel ${className}`}>
       <header className="flex items-baseline justify-between gap-3 border-line border-b px-4 py-2.5">
-        <h2 className="label m-0 font-medium">{title}</h2>
+        <h2 className="section-title m-0 font-medium">{title}</h2>
         {hint && <span className="text-[11px] text-fg-muted">{hint}</span>}
       </header>
       <div className="p-4">{children}</div>
@@ -38,7 +40,11 @@ export function Card({
 }
 
 export function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="m-0 text-fg-muted text-xs">{children}</p>;
+  return (
+    <EmptyState size="md" className="items-start text-left">
+      {children}
+    </EmptyState>
+  );
 }
 
 export const pageLabel = (lookup: BookLookup, pageId: string): string => {
@@ -124,13 +130,9 @@ export function ActivityList({
         })}
       </ul>
       {events.length > limit && (
-        <button
-          type="button"
-          onClick={() => setLimit((l) => l + PAGE_SIZE)}
-          className="mt-3 rounded-md border border-line px-3 py-1.5 text-xs hover:border-accent"
-        >
+        <Button size="sm" onClick={() => setLimit((l) => l + PAGE_SIZE)} className="mt-3">
           Show more ({events.length - limit} left)
-        </button>
+        </Button>
       )}
     </div>
   );

@@ -13,7 +13,7 @@
  *
  *   node scripts/make-dev-fixtures.mjs            # no-op when dev-fixtures/site.json exists
  *   node scripts/make-dev-fixtures.mjs --force    # regenerate
- *     --password=<word>   protect the site with that word (SHA-256 over salt + word, version 1)
+ *     --password=<word>   protect the first book with that word (SHA-256 over salt + word, version 1)
  *     --one-book          list only `demo` in site.json (root redirects instead of showing the grid)
  *     --skip-avif         WebP ladder only (faster)
  */
@@ -444,28 +444,34 @@ const books = [
     images,
   }),
 ];
+const word = args.get('password');
+const salt = randomBytes(16).toString('hex');
+const password =
+  typeof word === 'string' && word.length > 0
+    ? { hash: sha(`${salt}${word}`), salt, version: 1, expiresAt: null }
+    : null;
+// The password goes on the first book only, so the list shows one locked and the rest open.
+books.forEach((b, i) => {
+  b.password = i === 0 ? password : null;
+});
 for (const b of books) {
   writeFileSync(join(OUT, 'books', b.slug, 'manifest.json'), JSON.stringify(b, null, 2));
 }
 
-const word = args.get('password');
-const salt = randomBytes(16).toString('hex');
 const site = {
-  password:
-    typeof word === 'string' && word.length > 0
-      ? { hash: sha(`${salt}${word}`), salt, version: 1, expiresAt: null }
-      : null,
+  password: null,
   books: (args.has('one-book') ? books.slice(0, 1) : books).map((b) => ({
     slug: b.slug,
     title: b.title,
     cover: firstThumb(b.pages, b.images),
     pages: b.pages.length,
     publishedAt: b.publishedAt,
+    locked: b.password !== null,
   })),
   api: API,
 };
 writeFileSync(join(OUT, 'site.json'), JSON.stringify(site, null, 2));
 
 console.log(
-  `[fixtures] wrote ${books.length} books, ${PHOTOS.length} images${sharp ? '' : ' (svg)'} to dev-fixtures/ in ${Date.now() - started} ms${site.password ? ' (password set)' : ''}`,
+  `[fixtures] wrote ${books.length} books, ${PHOTOS.length} images${sharp ? '' : ' (svg)'} to dev-fixtures/ in ${Date.now() - started} ms${password ? ` (password on ${books[0].slug})` : ''}`,
 );

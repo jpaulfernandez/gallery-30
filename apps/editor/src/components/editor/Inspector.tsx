@@ -1,7 +1,9 @@
 import { useDroppable } from '@dnd-kit/core';
 import {
+  BOOK_OUTPUT_ID,
   type Book,
   DEFAULT_TEXT_COLOR,
+  findOutput,
   fontStack,
   type Page,
   type PhotoElement,
@@ -13,10 +15,24 @@ import {
 import type { Draft } from 'immer';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { cropFit, MAX_SCALE, MIN_SCALE, zoomCrop } from '../../lib/crop';
-import { useAssetsStore } from '../../store/assets';
+import { fileOfAsset, useAssetsStore } from '../../store/assets';
 import { useBookStore } from '../../store/book';
+import { currentDesignBook, useDesignBook } from '../../store/design';
+import { assetDevelop } from '../../store/library';
 import { useUiStore } from '../../store/ui';
+// Workflow plan 35: Caption this page, and a photo's alt text.
+import { AltTextField } from '../ai/AltTextField';
+import { openCaptionPage } from '../ai/CaptionPageSheet';
+import { WriteButton } from '../ai/WritePopover';
+import { PostPanel, SendToPostSection } from '../design/PostPanel';
+import { PrintPanel } from '../design/PrintPanel';
+import { SlideshowPanel } from '../design/SlideshowPanel';
+import { openDevelop } from '../filmstrip/visible';
 import { layoutName } from '../layouts/layoutGroups';
+import { Button, buttonClass, focusRing } from '../ui/Button';
+import { Input, Select, Switch } from '../ui/Field';
+import { SegmentedTrack } from '../ui/Segmented';
+import { Tag } from '../ui/Tag';
 import { BookSettings } from './BookSettings';
 import { type DragData, type DropData, pageBgDndId } from './dnd';
 import { GridOfFramesButton, SaveAsLayoutButton } from './FramePopovers';
@@ -29,11 +45,31 @@ import { addTextToCurrentPage } from './textActions';
 
 /**
  * Right panel: book settings and page settings with nothing selected, slot and photo settings for
- * a photo, typography for text.
+ * a photo, typography for text. Plan 48: each section is a card (`inspectorUi` `Section`), the controls come from
+ * `components/ui`.
  */
 export function Inspector() {
   const pageIndex = useUiStore((s) => s.pageIndex);
-  const book = useBookStore((s) => s.book);
+  const book = useDesignBook();
+  // Book settings (size, theme, publish) belong to the book: shown with the book open, never on a post.
+  const realBook = useBookStore((s) => s.book);
+  const onBook = useUiStore((s) => s.design.outputId === BOOK_OUTPUT_ID);
+  // A social post (plan 14): its network, frame limit and caption with nothing selected.
+  const outputId = useUiStore((s) => s.design.outputId);
+  const post = useBookStore((s) => {
+    const output = s.book ? findOutput(s.book, outputId) : undefined;
+    return output?.kind === 'social' ? output : undefined;
+  });
+  // A print (plan 15): its paper, imposition, bleed, marks and dpi with nothing selected.
+  const print = useBookStore((s) => {
+    const output = s.book ? findOutput(s.book, outputId) : undefined;
+    return output?.kind === 'print' ? output : undefined;
+  });
+  // A slideshow (plan 16): its slides, timing, transition, motion, size and audio with nothing selected.
+  const slideshow = useBookStore((s) => {
+    const output = s.book ? findOutput(s.book, outputId) : undefined;
+    return output?.kind === 'slideshow' ? output : undefined;
+  });
   const pageAtIndex = book?.pages[pageIndex];
   const selectedId = useUiStore((s) => s.selectedElementId);
   const selected = pageAtIndex?.elements.find((e) => e.id === selectedId);
@@ -42,16 +78,24 @@ export function Inspector() {
 
   return (
     <aside aria-label="Inspector" className="flex min-h-0 flex-col border-line border-l bg-panel">
-      <header className="label border-line border-b px-3 py-2">
+      <header className="section-title border-line border-b px-3 py-2">
         {many.length > 1
           ? `${many.length} selected`
           : selected
             ? selected.type === 'photo'
               ? 'Photo slot'
               : 'Text'
-            : 'Book and page'}
+            : onBook
+              ? 'Book and page'
+              : post
+                ? 'Post and frame'
+                : print
+                  ? 'Print and page'
+                  : slideshow
+                    ? 'Slideshow and page'
+                    : 'Page'}
       </header>
-      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 scrollbar overflow-x-hidden overflow-y-auto [scrollbar-gutter:stable]">
         {many.length > 1 ? (
           <SelectionSection count={many.length} frames={many.filter((e) => e.type === 'photo').length} />
         ) : selected?.type === 'photo' && pageAtIndex ? (
@@ -60,8 +104,12 @@ export function Inspector() {
           <TextInspector key={selected.id} pageId={pageAtIndex.id} element={selected} />
         ) : book ? (
           <>
-            <BookSettings book={book} />
+            {onBook && realBook && <BookSettings book={realBook} />}
+            {post && <PostPanel post={post} />}
+            {print && <PrintPanel print={print} />}
+            {slideshow && <SlideshowPanel slideshow={slideshow} />}
             {pageAtIndex && <PageInspector key={pageAtIndex.id} page={pageAtIndex} book={book} />}
+            {pageAtIndex && <SendToPostSection pageId={pageAtIndex.id} />}
           </>
         ) : null}
       </div>
@@ -121,9 +169,9 @@ function PageInspector({ page, book }: { page: Page; book: Book }) {
                 setBackground(page.id, e.target.value);
               }}
               aria-label="Page background color"
-              className="h-6 w-8 cursor-pointer rounded border border-line bg-transparent p-0"
+              className="h-6 w-8 cursor-pointer rounded-xs border border-line bg-transparent p-0"
             />
-            <input
+            <Input
               type="text"
               value={hex}
               onChange={(e) => setHex(e.target.value)}
@@ -133,21 +181,17 @@ function PageInspector({ page, book }: { page: Page; book: Book }) {
               }}
               spellCheck={false}
               aria-label="Page background hex"
-              className={`${inputClass} w-24 font-mono`}
+              className="w-24 font-mono"
             />
           </div>
         </Field>
         <BackgroundPhoto page={page} color={color} />
       </Section>
       <Section title="Layout">
-        <button
-          type="button"
-          onClick={() => openLayoutPicker(page.id)}
-          className="flex w-full items-center justify-between rounded-md border border-line bg-panel-2 px-2.5 py-1.5 text-left text-xs hover:border-accent"
-        >
+        <Button size="sm" onClick={() => openLayoutPicker(page.id)} className="w-full justify-between">
           <span>{layoutName(page.layout, book)}</span>
           <span className="text-fg-muted">Change…</span>
-        </button>
+        </Button>
         <div className="grid grid-cols-2 gap-2">
           <GridOfFramesButton pageId={page.id} className={frameToolButton} />
           <SaveAsLayoutButton page={page} className={frameToolButton} />
@@ -157,16 +201,20 @@ function PageInspector({ page, book }: { page: Page; book: Book }) {
         </p>
       </Section>
       <Section title="Text">
-        <button
-          type="button"
-          onClick={() => addTextToCurrentPage()}
-          title="Add text (T)"
-          className="flex w-full items-center gap-2 rounded-md border border-line bg-panel-2 px-2.5 py-1.5 text-left text-xs hover:border-accent"
-        >
+        <Button size="sm" onClick={() => addTextToCurrentPage()} title="Add text (T)" className="w-full gap-2">
           <TextIcon />
           <span>Add text</span>
-          <span className="ml-auto text-fg-muted">T</span>
-        </button>
+          <span className="ml-auto font-mono text-fg-muted">T</span>
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => openCaptionPage(page.id)}
+          title="Write this page's captions with AI, with the alt text of its photos; you review them before they are placed"
+          className="w-full gap-2"
+        >
+          <span aria-hidden="true">✦</span>
+          <span>Caption this page…</span>
+        </Button>
       </Section>
       <Section title="Notes">
         <textarea
@@ -194,8 +242,13 @@ function PageInspector({ page, book }: { page: Page; book: Book }) {
   );
 }
 
-const frameToolButton =
-  'w-full rounded-md border border-line bg-panel-2 px-2 py-1.5 text-left text-xs hover:border-accent disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-line';
+const frameToolButton = `${buttonClass({ size: 'sm' })} w-full`;
+
+/** An item of the inspector's segmented tracks (`ui/Segmented`'s look), sharing the track's width equally. */
+const segment = (active: boolean) =>
+  `relative z-10 flex-1 rounded-sm py-1 font-medium text-[11px] transition-colors duration-base ease-out ${focusRing} ${
+    active ? 'text-fg' : 'text-fg-2 hover:text-fg'
+  }`;
 
 const FILTERS: Array<{ value: PhotoElement['filter']; label: string }> = [
   { value: 'none', label: 'None' },
@@ -215,7 +268,7 @@ function PhotoInspector({ pageId, element }: { pageId: string; element: PhotoEle
     <>
       <FrameSection pageId={pageId} element={element} />
       <Section title="Slot">
-        <div role="radiogroup" aria-label="Slot ratio" className="grid grid-cols-6 rounded-md border border-line p-0.5">
+        <SegmentedTrack role="radiogroup" aria-label="Slot ratio" activeKey={element.ratio ?? null} className="w-full">
           {SLOT_RATIOS.map((ratio) => {
             const active = element.ratio === ratio;
             return (
@@ -225,16 +278,15 @@ function PhotoInspector({ pageId, element }: { pageId: string; element: PhotoEle
                 type="button"
                 role="radio"
                 aria-checked={active}
+                data-segment-active={active || undefined}
                 onClick={() => setSlotRatio(pageId, element.id, ratio)}
-                className={`rounded px-0 py-1 text-[11px] tabular-nums ${
-                  active ? 'bg-line text-fg' : 'text-fg-muted hover:text-fg'
-                }`}
+                className={`${segment(active)} font-mono tabular-nums`}
               >
                 {ratio}
               </button>
             );
           })}
-        </div>
+        </SegmentedTrack>
       </Section>
       <Section title="Photo">
         {hasPhoto ? (
@@ -249,44 +301,42 @@ function PhotoInspector({ pageId, element }: { pageId: string; element: PhotoEle
                   value={element.crop.scale}
                   onPointerDown={onSliderPointerDown}
                   onChange={(e) => {
-                    const fit = cropFit(useBookStore.getState().book, element);
+                    const fit = cropFit(currentDesignBook(), element);
                     setCrop(pageId, element.id, zoomCrop(element.crop, Number(e.target.value), undefined, fit));
                   }}
                   aria-label="Photo zoom"
                   className="w-32 accent-accent"
                 />
-                <span className="w-9 text-right text-fg-muted text-xs tabular-nums">
+                <span className="w-10 text-right font-mono text-fg-2 text-xs tabular-nums">
                   {Math.round(element.crop.scale * 100)}%
                 </span>
               </div>
             </Field>
             <Field label="Rotate">
-              <button
-                type="button"
-                onClick={() => rotate(pageId, element.id)}
-                className="flex items-center gap-1.5 rounded-md border border-line bg-panel-2 px-2 py-1 text-xs hover:border-accent"
-              >
+              <Button size="sm" onClick={() => rotate(pageId, element.id)}>
                 <RotateIcon />
-                <span className="tabular-nums">{element.rotate}°</span>
-              </button>
+                <span className="font-mono tabular-nums">{element.rotate}°</span>
+              </Button>
             </Field>
             <Field label="Filter">
-              <select
+              <Select
                 value={element.filter}
                 onChange={(e) => setFilter(pageId, element.id, e.target.value as PhotoElement['filter'])}
                 aria-label="Photo filter"
-                className={inputClass}
+                className="w-36"
               >
                 {FILTERS.map((f) => (
                   <option key={f.value} value={f.value}>
                     {f.label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </Field>
+            <DevelopField assetId={element.asset} />
+            {element.asset && <AltTextField assetId={element.asset} />}
             <p className="text-[11px] text-fg-muted leading-relaxed">
-              Drag the photo to pan, pinch to zoom, double-click to open the original. Alt + drag (or the Move handle)
-              swaps it with another slot.
+              Drag to move the frame. Double-click (or Adjust in the toolbar) to pan and zoom the photo inside; Esc
+              finishes. Alt + drag (or the Move handle) swaps it with another slot.
             </p>
           </>
         ) : (
@@ -294,6 +344,48 @@ function PhotoInspector({ pageId, element }: { pageId: string; element: PhotoEle
         )}
       </Section>
       <ShapeSection pageId={pageId} element={element} />
+    </>
+  );
+}
+
+/**
+ * Develop entries in the photo section: open the Develop view, flag edited photos and reset their edits, and import
+ * the photo's Lightroom (.xmp) settings.
+ */
+function DevelopField({ assetId }: { assetId: string | null }) {
+  const edited = useBookStore((s) => (assetId ? assetDevelop(s, assetId) !== undefined : false));
+  const reset = useBookStore((s) => s.resetAssetDevelop);
+  if (!assetId) return null;
+  return (
+    <>
+      <Field label="Develop">
+        <div className="flex items-center gap-1.5">
+          {edited && (
+            <>
+              <Tag tone="accent">Edited</Tag>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => reset(assetId)}
+                title="Remove every Develop adjustment from this photo"
+              >
+                Reset
+              </Button>
+            </>
+          )}
+          <Button size="sm" onClick={() => openDevelop(assetId)} title="Open the Develop view (D)">
+            Develop…
+          </Button>
+        </div>
+      </Field>
+      <Button
+        size="sm"
+        onClick={() => useUiStore.getState().openXmpImport([assetId])}
+        title="Read this photo’s Lightroom (.xmp) settings and apply them (Cmd+Shift+I in the Develop view)"
+        className="w-full justify-center"
+      >
+        Import Lightroom settings…
+      </Button>
     </>
   );
 }
@@ -368,14 +460,11 @@ function TextInspector({ pageId, element }: { pageId: string; element: TextEleme
     else setHex(color);
   };
 
-  const segment = (active: boolean) =>
-    `rounded px-0 py-1 text-[11px] ${active ? 'bg-line text-fg' : 'text-fg-muted hover:text-fg'}`;
-
   return (
     <>
       <Section title="Text">
         <Field label="Preset">
-          <select
+          <Select
             value={element.style}
             onChange={(e) => {
               const style = e.target.value as TextElement['style'];
@@ -388,17 +477,17 @@ function TextInspector({ pageId, element }: { pageId: string; element: TextEleme
               });
             }}
             aria-label="Text preset"
-            className={`${inputClass} w-36`}
+            className="w-36"
           >
             {TEXT_PRESET_OPTIONS.map((p) => (
               <option key={p.value} value={p.value}>
                 {p.label}
               </option>
             ))}
-          </select>
+          </Select>
         </Field>
         <Field label="Family">
-          <select
+          <Select
             value={family}
             onChange={(e) => {
               const value = e.target.value;
@@ -408,7 +497,7 @@ function TextInspector({ pageId, element }: { pageId: string; element: TextEleme
               });
             }}
             aria-label="Font family"
-            className={`${inputClass} w-36`}
+            className="w-36"
             style={{ fontFamily: fontStack(family) }}
           >
             {TEXT_FAMILIES.map((f) => (
@@ -417,12 +506,13 @@ function TextInspector({ pageId, element }: { pageId: string; element: TextEleme
               </option>
             ))}
             {!(TEXT_FAMILIES as readonly string[]).includes(family) && <option value={family}>{family}</option>}
-          </select>
+          </Select>
         </Field>
         <div className="space-y-1.5">
           <Field label="Size">
             <div className="flex items-center gap-1.5">
-              <input
+              {/* Plan 48 keeps the live preview per keystroke; whether it commits on blur instead is plan 54's. */}
+              <Input
                 type="number"
                 min={SIZE_MIN}
                 max={SIZE_MAX}
@@ -441,7 +531,7 @@ function TextInspector({ pageId, element }: { pageId: string; element: TextEleme
                   setSizeDraft(String(sizePercent(size)));
                 }}
                 aria-label="Font size, percent of page height"
-                className={`${inputClass} w-16 tabular-nums`}
+                className="w-16 font-mono tabular-nums"
               />
               <span className="text-[11px] text-fg-muted">% of page height</span>
             </div>
@@ -459,7 +549,7 @@ function TextInspector({ pageId, element }: { pageId: string; element: TextEleme
           />
         </div>
         <Field label="Weight">
-          <select
+          <Select
             value={weight}
             onChange={(e) => {
               const value = Number(e.target.value);
@@ -469,7 +559,7 @@ function TextInspector({ pageId, element }: { pageId: string; element: TextEleme
               });
             }}
             aria-label="Font weight"
-            className={`${inputClass} w-36`}
+            className="w-36"
           >
             {TEXT_WEIGHTS.map((w) => (
               <option key={w} value={w}>
@@ -477,14 +567,10 @@ function TextInspector({ pageId, element }: { pageId: string; element: TextEleme
               </option>
             ))}
             {!(TEXT_WEIGHTS as readonly number[]).includes(weight) && <option value={weight}>{weight}</option>}
-          </select>
+          </Select>
         </Field>
         <Field label="Align">
-          <div
-            role="radiogroup"
-            aria-label="Text alignment"
-            className="grid w-36 grid-cols-3 rounded-md border border-line p-0.5"
-          >
+          <SegmentedTrack role="radiogroup" aria-label="Text alignment" activeKey={element.align} className="w-36">
             {TEXT_ALIGNS.map((a) => (
               // biome-ignore lint/a11y/useSemanticElements: a segmented control, styled as buttons
               <button
@@ -492,6 +578,7 @@ function TextInspector({ pageId, element }: { pageId: string; element: TextEleme
                 type="button"
                 role="radio"
                 aria-checked={element.align === a.value}
+                data-segment-active={element.align === a.value || undefined}
                 onClick={() =>
                   update((el) => {
                     el.align = a.value;
@@ -502,7 +589,7 @@ function TextInspector({ pageId, element }: { pageId: string; element: TextEleme
                 {a.label}
               </button>
             ))}
-          </div>
+          </SegmentedTrack>
         </Field>
         <Field label="Color">
           <div className="flex items-center gap-2">
@@ -514,9 +601,9 @@ function TextInspector({ pageId, element }: { pageId: string; element: TextEleme
                 setColor(e.target.value);
               }}
               aria-label="Text color"
-              className="h-6 w-8 cursor-pointer rounded border border-line bg-transparent p-0"
+              className="h-6 w-8 cursor-pointer rounded-xs border border-line bg-transparent p-0"
             />
-            <input
+            <Input
               type="text"
               value={hex}
               onChange={(e) => setHex(e.target.value)}
@@ -526,40 +613,30 @@ function TextInspector({ pageId, element }: { pageId: string; element: TextEleme
               }}
               spellCheck={false}
               aria-label="Text color hex"
-              className={`${inputClass} w-24 font-mono`}
+              className="w-24 font-mono"
             />
           </div>
         </Field>
         <Field label="Pill background">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={element.pill === true}
-            aria-label="Pill background"
-            onClick={() =>
+          <Switch
+            checked={element.pill === true}
+            label="Pill background"
+            hideLabel
+            onChange={() =>
               update((el) => {
                 if (el.pill) delete el.pill;
                 else el.pill = true;
               })
             }
-            className={`relative h-4 w-7 rounded-full transition-colors ${element.pill ? 'bg-accent' : 'bg-line'}`}
-          >
-            <span
-              className={`absolute top-0.5 left-0.5 size-3 rounded-full bg-white transition-transform ${
-                element.pill ? 'translate-x-3' : ''
-              }`}
-            />
-          </button>
+          />
         </Field>
       </Section>
       <Section title="Content">
-        <button
-          type="button"
-          onClick={() => editText(element.id)}
-          className="w-full rounded-md border border-line bg-panel-2 px-2.5 py-1.5 text-left text-xs hover:border-accent"
-        >
+        <Button size="sm" onClick={() => editText(element.id)} className="w-full">
           Edit text
-        </button>
+        </Button>
+        {/* Workflow plan 34: ✦ Write, three AI captions for this text box. */}
+        <WriteButton pageId={pageId} element={element} />
         <p className="text-[11px] text-fg-muted leading-relaxed">
           Double-click the text or press Enter to edit (Escape reverts, Cmd+Enter or clicking away commits). Drag to
           move; it snaps to the 8 pt grid. Delete removes it.
@@ -579,7 +656,7 @@ function BackgroundPhoto({ page, color }: { page: Page; color: string }) {
   const setBackground = useBookStore((s) => s.setPageBackground);
   const assetId = typeof page.background === 'object' ? page.background.asset : null;
   const relPath = useBookStore((s) => (assetId ? (s.book?.assets[assetId]?.path ?? null) : null));
-  const file = useAssetsStore((s) => (relPath ? s.files[relPath] : undefined));
+  const file = useAssetsStore((s) => fileOfAsset(s.files, assetId));
   const src = file?.thumbUrl ?? file?.proxyUrl;
   const drop: DropData = { kind: 'page-bg', pageId: page.id };
   const { setNodeRef, isOver, active } = useDroppable({ id: pageBgDndId(page.id), data: drop });
@@ -587,14 +664,14 @@ function BackgroundPhoto({ page, color }: { page: Page; color: string }) {
 
   return (
     <div className="space-y-1.5">
-      <span className="text-fg-muted text-xs">Background photo</span>
+      <span className="text-fg-2 text-xs">Background photo</span>
       <div
         ref={setNodeRef}
         className={`relative flex h-20 items-center justify-center overflow-hidden rounded-md border text-[11px] ${
           isOver && accepts
-            ? 'border-accent bg-accent/15 text-fg'
+            ? 'border-fg bg-fg/10 text-fg'
             : accepts
-              ? 'border-accent/60 border-dashed text-fg-muted'
+              ? 'border-fg/60 border-dashed text-fg-muted'
               : 'border-line border-dashed text-fg-muted'
         }`}
       >
@@ -607,16 +684,12 @@ function BackgroundPhoto({ page, color }: { page: Page; color: string }) {
         ) : (
           <span>Drop a photo here</span>
         )}
-        {assetId && isOver && accepts && <span className="absolute inset-0 bg-accent/30" />}
+        {assetId && isOver && accepts && <span className="absolute inset-0 bg-fg/20" />}
       </div>
       {assetId && (
-        <button
-          type="button"
-          onClick={() => setBackground(page.id, color)}
-          className="rounded-md border border-line bg-panel-2 px-2 py-1 text-xs hover:border-accent"
-        >
+        <Button size="sm" onClick={() => setBackground(page.id, color)}>
           Remove photo
-        </button>
+        </Button>
       )}
     </div>
   );

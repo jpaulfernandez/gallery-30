@@ -7,13 +7,19 @@
  * `margin` and `gutter` go through `spacing()` (width fractions, like every token) so snap lines
  * coincide with the layouts' content box on any page.
  */
-import type { BookTemplate, Frame, Theme } from '../schema.js';
+import type { BookTemplate, Frame, PageGuide, Theme } from '../schema.js';
 import { spacing } from './geometry.js';
 
 type Size = Pick<BookTemplate, 'width' | 'height'>;
 
 export type SnapAxis = 'x' | 'y';
-export type SnapKind = 'grid' | 'margin' | 'hard' | 'edge' | 'center' | 'frame' | 'gap';
+/**
+ * What a snap line is. `equal` (equal spacing across three or more frames) and `size` (a resize
+ * matching a neighbour's width or height) come with `spans` and a `label` on their guides. `guide`
+ * is a ruler guide stored on the page (`page.guides`, workflow plan 31), passed in through
+ * `SnapFrameOptions.extraLines` (`pageGuideLines`); its guides are labelled "guide".
+ */
+export type SnapKind = 'grid' | 'margin' | 'hard' | 'edge' | 'center' | 'frame' | 'gap' | 'equal' | 'size' | 'guide';
 export type SnapHandle = 'move' | 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw';
 
 /** Theme tokens the snap rules read (a resolved `Theme` satisfies it). */
@@ -34,23 +40,48 @@ export interface SnapLine {
   strength: number;
   /** Gap lines only: the frame edge allowed to snap to it. */
   side?: GapSide;
+  /**
+   * Equal-spacing lines: the pairs of frames whose gaps are equal once the frame sits on the line,
+   * each `[before, after]` along the axis; `null` stands for the moving frame.
+   */
+  pairs?: ReadonlyArray<readonly [Frame | null, Frame | null]>;
+  /** Size-match lines: the neighbour whose width (x) or height (y) the frame takes. */
+  match?: Frame;
+}
+
+/**
+ * A measured stretch drawn with a guide (page fractions): from `from` to `to` along the guide's
+ * axis, at `at` across it. Equal-spacing guides span each equal gap (at the middle of the two
+ * frames' shared band), size-match guides span the two equal sides (at the frames' top or left edge).
+ */
+export interface GuideSpan {
+  from: number;
+  to: number;
+  at: number;
 }
 
 export interface SnapGuide {
   axis: SnapAxis;
   value: number;
   kind: SnapKind;
+  /** `equal` and `size` guides only: what to write beside them ("equal", "same width", "same height"). */
+  label?: string;
+  /** `equal` and `size` guides only: the stretches to draw instead of a line across the page. */
+  spans?: GuideSpan[];
 }
 
 /** Page width in inches the guide's rules are written for. */
 export const GUIDE_PAGE_WIDTH_IN = 8;
 
-/** Line strengths: page edges, margins, other frames and gaps beat the grid. */
+/** Line strengths: page edges, margins, ruler guides, other frames and gaps beat the grid. */
 export const SNAP_STRENGTH: Record<SnapKind, number> = {
   edge: 4,
   margin: 4,
+  guide: 4,
   frame: 3,
   gap: 3,
+  equal: 3,
+  size: 3,
   hard: 2,
   center: 2,
   grid: 1,
@@ -146,6 +177,155 @@ export function snapCandidates(
   return { x: axisLines('x'), y: axisLines('y') };
 }
 
+/** Cross-axis span and along-axis span of a frame for `axis`. */
+const spansOf = (f: Frame, axis: SnapAxis): { a0: number; a1: number; c0: number; c1: number } =>
+  axis === 'x'
+    ? { a0: f.x, a1: f.x + f.w, c0: f.y, c1: f.y + f.h }
+    : { a0: f.y, a1: f.y + f.h, c0: f.x, c1: f.x + f.w };
+
+const SPAN_EPS = 1e-9;
+
+/**
+ * Equal-spacing lines for a moving frame (Figma's distribution guides), per axis. With the
+ * neighbours that share its row (x) or column (y), two of them next to each other (`A`, `B`, gap
+ * `g`, nothing of the row between them) give:
+ * - `A | F | B`: the frame centred in the space between them, the same gap on both sides (when it fits);
+ * - `A B | F`: the frame after them, its gap to `B` equal to `g`;
+ * - `F | A B`: the frame before them, its gap to `A` equal to `g`.
+ * So every line involves three frames or more. Lines are kind `equal`, tagged with the edge they
+ * belong to (`side`, as gap lines) and the pairs of frames whose gaps are then equal (`pairs`).
+ */
+export function equalSpacingCandidates(frame: Frame, others: readonly Frame[]): { x: SnapLine[]; y: SnapLine[] } {
+  const axisLines = (axis: SnapAxis): SnapLine[] => {
+    const self = spansOf(frame, axis);
+    const size = self.a1 - self.a0;
+    const row = others
+      .filter((o) => {
+        const s = spansOf(o, axis);
+        return overlaps(self.c0, self.c1, s.c0, s.c1);
+      })
+      .sort((p, q) => spansOf(p, axis).a0 - spansOf(q, axis).a0);
+    const out: SnapLine[] = [];
+    const line = (value: number, side: GapSide, pairs: SnapLine['pairs']): SnapLine => ({
+      value,
+      kind: 'equal',
+      strength: SNAP_STRENGTH.equal,
+      side,
+      pairs,
+    });
+    for (const a of row) {
+      const sa = spansOf(a, axis);
+      for (const b of row) {
+        if (a === b) continue;
+        const sb = spansOf(b, axis);
+        if (sa.a1 > sb.a0 + SPAN_EPS) continue; // `b` must start after `a` ends.
+        // Next to each other: nothing of the row lies in the gap.
+        const between = row.some((c) => {
+          if (c === a || c === b) return false;
+          const sc = spansOf(c, axis);
+          return sc.a0 >= sa.a1 - SPAN_EPS && sc.a1 <= sb.a0 + SPAN_EPS;
+        });
+        if (between) continue;
+        const gap = sb.a0 - sa.a1;
+        if (gap > SPAN_EPS) {
+          out.push(
+            line(sb.a1 + gap, 'after', [
+              [a, b],
+              [b, null],
+            ]),
+          );
+          out.push(
+            line(sa.a0 - gap - size, 'after', [
+              [null, a],
+              [a, b],
+            ]),
+          );
+        }
+        const room = gap - size;
+        if (room > SPAN_EPS)
+          out.push(
+            line(sa.a1 + room / 2, 'after', [
+              [a, null],
+              [null, b],
+            ]),
+          );
+      }
+    }
+    return out;
+  };
+  return { x: axisLines('x'), y: axisLines('y') };
+}
+
+/**
+ * Size-match lines for a resize: the dragged edge's positions at which the frame takes a
+ * neighbour's width (east or west handle) or height (north or south), kind `size`, each naming the
+ * neighbour (`match`). A move gets none.
+ */
+export function sizeMatchCandidates(
+  frame: Frame,
+  others: readonly Frame[],
+  handle: SnapHandle,
+): { x: SnapLine[]; y: SnapLine[] } {
+  const out: { x: SnapLine[]; y: SnapLine[] } = { x: [], y: [] };
+  if (handle === 'move') return out;
+  const add = (axis: SnapAxis, value: number, side: GapSide, match: Frame) => {
+    if (out[axis].some((l) => Math.abs(l.value - value) < SPAN_EPS)) return;
+    out[axis].push({ value, kind: 'size', strength: SNAP_STRENGTH.size, side, match });
+  };
+  for (const o of others) {
+    if (o.w > MIN_SIZE) {
+      if (handle.includes('e')) add('x', frame.x + o.w, 'before', o);
+      if (handle.includes('w')) add('x', frame.x + frame.w - o.w, 'after', o);
+    }
+    if (o.h > MIN_SIZE) {
+      if (handle.includes('s')) add('y', frame.y + o.h, 'before', o);
+      if (handle.includes('n')) add('y', frame.y + frame.h - o.h, 'after', o);
+    }
+  }
+  return out;
+}
+
+/** The stretches an `equal` or `size` guide draws, measured on the snapped frame `out`. */
+function guideSpans(axis: SnapAxis, l: SnapLine, out: Frame): GuideSpan[] | undefined {
+  if (l.kind === 'equal' && l.pairs) {
+    return l.pairs.map(([p, q]) => {
+      const sp = spansOf(p ?? out, axis);
+      const sq = spansOf(q ?? out, axis);
+      const lo = Math.max(sp.c0, sq.c0);
+      const hi = Math.min(sp.c1, sq.c1);
+      const at = lo < hi ? (lo + hi) / 2 : (sp.c0 + sp.c1 + sq.c0 + sq.c1) / 4;
+      return { from: sp.a1, to: sq.a0, at };
+    });
+  }
+  if (l.kind === 'size' && l.match) {
+    return [out, l.match].map((f) => {
+      const s = spansOf(f, axis);
+      return { from: s.a0, to: s.a1, at: s.c0 };
+    });
+  }
+  return undefined;
+}
+
+const GUIDE_LABEL: Partial<Record<SnapKind, Partial<Record<SnapAxis, string>>>> = {
+  equal: { x: 'equal', y: 'equal' },
+  size: { x: 'same width', y: 'same height' },
+  guide: { x: 'guide', y: 'guide' },
+};
+
+/**
+ * The page's ruler guides (`page.guides`, workflow plan 31) as snap lines, kind `guide`, for
+ * `SnapFrameOptions.extraLines`: an `x` guide is a vertical line at that fraction of the width, a
+ * `y` guide a horizontal one. Any feature of the frame (edge or centre) snaps to them.
+ */
+export function pageGuideLines(guides: readonly PageGuide[]): { x: SnapLine[]; y: SnapLine[] } {
+  const out: { x: SnapLine[]; y: SnapLine[] } = { x: [], y: [] };
+  for (const g of guides) {
+    if (!Number.isFinite(g.value)) continue;
+    out[g.axis].push({ value: g.value, kind: 'guide', strength: SNAP_STRENGTH.guide });
+  }
+  return out;
+}
+
 export interface SnapFrameOptions {
   /** Snap distance as a fraction of the page width (converted for the y axis). */
   threshold: number;
@@ -153,6 +333,16 @@ export interface SnapFrameOptions {
   lockRatio?: boolean;
   /** What is being dragged (default `move`). */
   handle?: SnapHandle;
+  /**
+   * More candidate lines (page guides and the like), added to the built-in ones. They compete by
+   * `strength` and take any feature of the frame unless they carry a `side`.
+   */
+  extraLines?: { x?: readonly SnapLine[]; y?: readonly SnapLine[] };
+  /**
+   * Offer size-match lines on a resize (default true). Off for a resize from the centre, where the
+   * size is twice the dragged edge's travel, so a size line on the anchored frame would not match.
+   */
+  sizeMatch?: boolean;
 }
 
 interface Hit {
@@ -208,7 +398,18 @@ export function snapFrame(
   opts: SnapFrameOptions,
 ): { frame: Frame; guides: SnapGuide[] } {
   const handle = opts.handle ?? 'move';
-  const lines = snapCandidates(frame, others, theme, template);
+  const base = snapCandidates(frame, others, theme, template);
+  // A move also snaps to equal spacing; a resize to a neighbour's width or height.
+  const smart =
+    handle === 'move'
+      ? equalSpacingCandidates(frame, others)
+      : opts.sizeMatch === false
+        ? { x: [], y: [] }
+        : sizeMatchCandidates(frame, others, handle);
+  const lines = {
+    x: [...base.x, ...smart.x, ...(opts.extraLines?.x ?? [])],
+    y: [...base.y, ...smart.y, ...(opts.extraLines?.y ?? [])],
+  };
   const thr = { x: opts.threshold, y: tokenOnAxis(opts.threshold, template, 'y') };
   let { x, y, w, h } = frame;
   const hits: Partial<Record<SnapAxis, Hit>> = {};
@@ -298,12 +499,26 @@ export function snapFrame(
 
   const out: Frame = { x, y, w, h };
   const guides: SnapGuide[] = [];
-  const seen = new Set<string>();
+  const seen = new Map<string, SnapGuide>();
+  const sameSpan = (a: GuideSpan, b: GuideSpan) =>
+    Math.abs(a.from - b.from) < 1e-9 && Math.abs(a.to - b.to) < 1e-9 && Math.abs(a.at - b.at) < 1e-9;
   const add = (axis: SnapAxis, l: SnapLine) => {
     const key = `${axis}:${l.kind}:${l.value.toFixed(9)}`;
-    if (seen.has(key)) return;
-    seen.add(key);
-    guides.push({ axis, value: l.value, kind: l.kind });
+    const spans = guideSpans(axis, l, out);
+    const twin = seen.get(key);
+    if (twin) {
+      // Two lines at one value (two equal-spacing pairs): one guide, every span measured.
+      if (spans && twin.spans) {
+        for (const span of spans) if (!twin.spans.some((t) => sameSpan(t, span))) twin.spans.push(span);
+      }
+      return;
+    }
+    const guide: SnapGuide = { axis, value: l.value, kind: l.kind };
+    const label = GUIDE_LABEL[l.kind]?.[axis];
+    if (label) guide.label = label;
+    if (spans) guide.spans = spans;
+    seen.set(key, guide);
+    guides.push(guide);
   };
   for (const axis of ['x', 'y'] as const) {
     const hit = hits[axis];

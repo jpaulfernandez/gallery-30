@@ -22,6 +22,7 @@ export function resolveImageRecord(image: ImageRecord, targetWidthPx: number): R
     placeholder: image.placeholder,
     width: image.width,
     height: image.height,
+    ...(image.alt ? { alt: image.alt } : {}),
   };
 }
 

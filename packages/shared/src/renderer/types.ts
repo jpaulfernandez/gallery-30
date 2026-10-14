@@ -15,6 +15,8 @@ export interface ResolvedImage {
   height?: number;
   /** The img's `loading` attribute; the viewer lazy-loads pages beyond the neighbours. */
   loading?: 'eager' | 'lazy';
+  /** The img's alt text (the viewer: the manifest's `alt`, plan 35); `alt=""` when absent. */
+  alt?: string;
 }
 
 export interface ImageSource {

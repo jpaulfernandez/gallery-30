@@ -114,6 +114,7 @@ describe('applyLayout', () => {
   const page: Page = {
     id: 'p',
     layout: 'three-hero-two',
+    guides: [],
     background: '#fff',
     elements: [
       photo('a', 'A1', { crop: { x: 0.1, y: -0.05, scale: 1.4 }, rotate: 90, filter: 'bw', ratio: '4:5' }),
@@ -209,7 +210,7 @@ describe('setSlotRatio', () => {
 
   it('resizes around the centre to the ratio in page pixels', () => {
     const page = applyLayout(
-      { id: 'p', layout: 'x', background: '#fff', elements: [photo('a', 'A'), photo('b', 'B')] },
+      { id: 'p', layout: 'x', background: '#fff', elements: [photo('a', 'A'), photo('b', 'B')], guides: [] },
       'two-stacked',
       THEME,
       portrait,
@@ -232,7 +233,7 @@ describe('setSlotRatio', () => {
 
   it('does not shrink step by step when toggling ratios with the theme', () => {
     const page = applyLayout(
-      { id: 'p', layout: 'x', background: '#fff', elements: [photo('a', 'A')] },
+      { id: 'p', layout: 'x', background: '#fff', elements: [photo('a', 'A')], guides: [] },
       'single-framed',
       THEME,
       portrait,
@@ -247,6 +248,7 @@ describe('setSlotRatio', () => {
     const page: Page = {
       id: 'p',
       layout: 'custom',
+      guides: [],
       background: '#fff',
       elements: [photo('a', 'A', { frame: { x: 0, y: 0.1, w: 0.2, h: 0.8 } })],
     };
@@ -261,7 +263,7 @@ describe('setSlotRatio', () => {
   });
 
   it('shrinks a full-bleed slot so a square still fits a 4:5 page', () => {
-    const page: Page = { id: 'p', layout: 'single-full', background: '#fff', elements: [photo('a', 'A')] };
+    const page: Page = { id: 'p', layout: 'single-full', background: '#fff', elements: [photo('a', 'A')], guides: [] };
     const f = (setSlotRatio(page, 'a', '1:1', portrait, THEME).elements[0] as PhotoElement).frame;
     expect(f.w).toBeCloseTo(1, 9);
     expect(f.h).toBeCloseTo(1080 / 1350, 9);
@@ -269,7 +271,7 @@ describe('setSlotRatio', () => {
   });
 
   it('returns the page unchanged for an unknown element', () => {
-    const page: Page = { id: 'p', layout: 'single-full', background: '#fff', elements: [photo('a', 'A')] };
+    const page: Page = { id: 'p', layout: 'single-full', background: '#fff', elements: [photo('a', 'A')], guides: [] };
     expect(setSlotRatio(page, 'zzz', '1:1', portrait)).toBe(page);
   });
 });

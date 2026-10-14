@@ -33,8 +33,13 @@ const ASSETS: Record<string, { width: number; height: number }> = {
 /** The renderer fixtures keep the original tighter spacing so their renders stay stable. */
 const FIXTURE_THEME: Theme = resolveTheme({ margin: 0.04, gutter: 0.02 });
 
+/** The fixture books' one folder. */
+export const FIXTURE_FOLDER_ID = 'fixture-folder';
+
 function assets(): Record<string, Asset> {
-  return Object.fromEntries(Object.entries(ASSETS).map(([id, size]) => [id, { path: `fixture/${id}.jpg`, ...size }]));
+  return Object.fromEntries(
+    Object.entries(ASSETS).map(([id, size]) => [id, { path: `fixture/${id}.jpg`, folder: FIXTURE_FOLDER_ID, ...size }]),
+  );
 }
 
 function photo(id: string, asset: string | null, extra: Partial<PhotoElement> = {}): PhotoElement {
@@ -68,6 +73,7 @@ function heroPage(id: string, template: BookTemplate): Page {
     {
       id,
       layout: 'blank',
+      guides: [],
       background: '#f6f3ee',
       elements: [
         photo(`${id}-e1`, 'f1', { crop: { x: 0.04, y: 0, scale: 1.1 } }),
@@ -115,13 +121,22 @@ function book(id: string, title: string, template: BookTemplate, pages: Page[]):
     version: CURRENT_VERSION,
     id,
     title,
-    sourceFolder: '/fixture',
+    folders: { [FIXTURE_FOLDER_ID]: { path: '/fixture' } },
     template,
     theme: FIXTURE_THEME,
     assets: assets(),
     pages,
-    publish: { slug: `fixture-${id}`, visibility: 'unlisted', lastPublishedAt: null, r2Prefix: 'fixt0' },
+    publish: {
+      slug: `fixture-${id}`,
+      visibility: 'unlisted',
+      lastPublishedAt: null,
+      r2Prefix: 'fixt0',
+      password: null,
+    },
     customLayouts: [],
+    outputProfile: 'srgb',
+    outputs: [],
+    captions: {},
   };
 }
 
@@ -135,6 +150,7 @@ export const fixtureBook: Book = book('fixture-portrait', 'Renderer fixture', po
     {
       id: 'p2',
       layout: 'blank',
+      guides: [],
       background: '#ffffff',
       elements: [photo('p2-e1', 'f4', { crop: { x: 0.05, y: -0.03, scale: 1.25 } })],
     },
@@ -145,6 +161,7 @@ export const fixtureBook: Book = book('fixture-portrait', 'Renderer fixture', po
     {
       id: 'p3',
       layout: 'blank',
+      guides: [],
       background: '#ffffff',
       elements: [
         photo('p3-e1', 'f5', { rotate: 90, filter: 'fade' }),
@@ -164,6 +181,7 @@ export const fixtureSquareBook: Book = book('fixture-square', 'Renderer fixture 
       {
         id: 's2',
         layout: 'blank',
+        guides: [],
         background: '#111111',
         elements: [
           photo('s2-e1', 'f6', { filter: 'bw' }),
@@ -185,6 +203,7 @@ export const fixtureSquareBook: Book = book('fixture-square', 'Renderer fixture 
     {
       id: 's3',
       layout: 'blank',
+      guides: [],
       background: { asset: 'f9' },
       elements: [photo('s3-e1', 'f8')],
     },

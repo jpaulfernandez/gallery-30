@@ -121,7 +121,7 @@ describe('page operations', () => {
     expect(book().pages[0]?.background).not.toEqual({ asset: 'dangling' });
     actions().setPageBackground(id, { asset: 'bg-asset' }, { path: 'bg.jpg' });
     expect(book().pages[0]?.background).toEqual({ asset: 'bg-asset' });
-    expect(book().assets['bg-asset']).toEqual({ path: 'bg.jpg' });
+    expect(book().assets['bg-asset']).toEqual({ path: 'bg.jpg', folder: 'fixture-folder' });
     actions().setPageBackground(id, '#123456');
     expect(book().pages[0]?.background).toBe('#123456');
     expect(() => BookSchema.parse(book())).not.toThrow();

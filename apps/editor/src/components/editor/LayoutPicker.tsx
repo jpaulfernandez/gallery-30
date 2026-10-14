@@ -1,9 +1,11 @@
 import { LAYOUT_BLANK } from '@photobook/shared';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { useBookStore } from '../../store/book';
+import { useDesignBook } from '../../store/design';
 import { useUiStore } from '../../store/ui';
 import { BlankLayoutCard, CardGrid, LayoutCard } from '../layouts/LayoutCard';
 import { customLayouts, groupLayouts, LAYOUT_COUNTS, type LayoutCountFilter } from '../layouts/layoutGroups';
+import { IconButton } from '../ui/Button';
 import { CloseIcon } from './icons';
 
 /**
@@ -13,7 +15,7 @@ import { CloseIcon } from './icons';
 export function LayoutPicker() {
   const target = useUiStore((s) => s.layoutPicker);
   const close = useUiStore((s) => s.closeLayoutPicker);
-  const book = useBookStore((s) => s.book);
+  const book = useDesignBook();
   const applyLayout = useBookStore((s) => s.applyLayout);
   const panelRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState<LayoutCountFilter>('all');
@@ -46,7 +48,7 @@ export function LayoutPicker() {
     // biome-ignore lint/a11y/useKeyWithClickEvents: Escape closes through the shell shortcuts
     // biome-ignore lint/a11y/noStaticElementInteractions: backdrop click closes the modal
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-8"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-stage/60 p-8"
       onClick={(e) => {
         if (e.target === e.currentTarget) close();
       }}
@@ -71,23 +73,16 @@ export function LayoutPicker() {
                 aria-checked={filter === value}
                 onClick={() => setFilter(value)}
                 className={`h-6 min-w-7 rounded px-2 text-[11px] tabular-nums outline-none focus-visible:ring-2 focus-visible:ring-accent ${
-                  filter === value ? 'bg-line text-fg' : 'text-fg-muted hover:bg-white/5 hover:text-fg'
+                  filter === value ? 'bg-line text-fg' : 'text-fg-muted hover:bg-fg/5 hover:text-fg'
                 }`}
               >
                 {value === 'all' ? 'All' : value}
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={close}
-            aria-label="Close"
-            className="ml-auto rounded-md p-1 text-fg-muted hover:bg-white/10 hover:text-fg"
-          >
-            <CloseIcon />
-          </button>
+          <IconButton label="Close" shortcut="Esc" icon={<CloseIcon />} onClick={close} className="ml-auto" />
         </header>
-        <div className="min-h-0 overflow-y-auto px-5 pt-2 pb-5">
+        <div className="min-h-0 scrollbar overflow-x-hidden overflow-y-auto px-5 pt-2 pb-5">
           <Group title="Blank">
             <BlankLayoutCard
               template={book.template}
@@ -135,7 +130,7 @@ export function LayoutPicker() {
 function Group({ title, count, children }: { title: string; count?: number; children: ReactNode }) {
   return (
     <div className="mt-3">
-      <h4 className="label mb-1.5 flex items-baseline gap-1.5">
+      <h4 className="section-title mb-1.5 flex items-baseline gap-1.5">
         {title}
         {count !== undefined && <span className="normal-case tracking-normal">{count}</span>}
       </h4>

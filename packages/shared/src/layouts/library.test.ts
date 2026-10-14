@@ -268,6 +268,7 @@ describe('applyLayout with library layouts', () => {
   const page: Page = {
     id: 'p',
     layout: LAYOUT_BLANK,
+    guides: [],
     background: '#fff',
     elements: [
       photo('a', 'A'),
@@ -354,6 +355,7 @@ describe('reflowLayout', () => {
   const base: Page = {
     id: 'p',
     layout: LAYOUT_BLANK,
+    guides: [],
     background: '#fff',
     elements: [photo('a', 'A'), photo('b', null), text('t1', 'one')],
   };

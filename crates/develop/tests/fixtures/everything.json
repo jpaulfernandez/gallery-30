@@ -1,0 +1,412 @@
+{
+  "settings": {
+    "version": 1,
+    "light": {
+      "exposure": -1.25,
+      "contrast": 15,
+      "highlights": -60,
+      "shadows": 45,
+      "whites": 10,
+      "blacks": -12
+    },
+    "whiteBalance": {
+      "mode": "incremental",
+      "temperature": 12,
+      "tint": -4
+    },
+    "curve": {
+      "parametric": {
+        "highlights": -10,
+        "lights": 5,
+        "darks": 8,
+        "shadows": -3,
+        "splits": [
+          0.2,
+          0.55,
+          0.8
+        ]
+      },
+      "luma": [
+        [
+          0,
+          0.02
+        ],
+        [
+          0.3,
+          0.25
+        ],
+        [
+          0.7,
+          0.78
+        ],
+        [
+          1,
+          0.98
+        ]
+      ],
+      "red": [
+        [
+          0,
+          0
+        ],
+        [
+          0.5,
+          0.52
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "green": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0.97
+        ]
+      ],
+      "blue": [
+        [
+          0,
+          0.03
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    "color": {
+      "vibrance": 25,
+      "saturation": -5,
+      "mix": {
+        "red": {
+          "hue": 5,
+          "saturation": -10,
+          "luminance": 3
+        },
+        "orange": {
+          "hue": 0,
+          "saturation": -15,
+          "luminance": 12
+        },
+        "yellow": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "green": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "aqua": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "blue": {
+          "hue": -20,
+          "saturation": 30,
+          "luminance": -25
+        },
+        "purple": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "magenta": {
+          "hue": 100,
+          "saturation": 0,
+          "luminance": 0
+        }
+      }
+    },
+    "detail": {
+      "clarity": 18,
+      "texture": 12,
+      "dehaze": 7,
+      "sharpen": {
+        "amount": 60,
+        "radius": 1.2,
+        "detail": 30,
+        "masking": 40
+      },
+      "denoise": {
+        "model": "nafnet-w32",
+        "luminance": 40,
+        "chroma": 60,
+        "sharpen": 10
+      }
+    },
+    "geometry": {
+      "rotate": 90,
+      "flipH": true,
+      "flipV": false,
+      "upright": {
+        "mode": "guided",
+        "guides": [
+          {
+            "id": "01JDEVELOPFIXTURE000000001",
+            "kind": "vertical",
+            "from": [
+              0.12,
+              0.1
+            ],
+            "to": [
+              0.15,
+              0.9
+            ]
+          },
+          {
+            "id": "01JDEVELOPFIXTURE000000002",
+            "kind": "horizontal",
+            "from": [
+              0.1,
+              0.62
+            ],
+            "to": [
+              0.9,
+              0.58
+            ]
+          }
+        ],
+        "transform": [
+          1.02,
+          0.01,
+          -0.015,
+          0.003,
+          0.98,
+          0.012,
+          0.0004,
+          -0.0002,
+          1
+        ],
+        "focal": 1.25
+      },
+      "transform": {
+        "vertical": -12,
+        "horizontal": 4,
+        "rotate": 1.5,
+        "aspect": -8,
+        "scale": 104,
+        "offsetX": 2,
+        "offsetY": -3
+      },
+      "constrainCrop": false,
+      "crop": {
+        "rect": {
+          "x": 0.05,
+          "y": 0.08,
+          "w": 0.9,
+          "h": 0.84
+        },
+        "angle": -2.4,
+        "aspect": [
+          4,
+          5
+        ]
+      }
+    },
+    "masks": [
+      {
+        "id": "01JDEVELOPFIXTUREMASK00001",
+        "name": "Sky",
+        "enabled": true,
+        "invert": false,
+        "opacity": 80,
+        "feather": 10,
+        "components": [
+          {
+            "id": "01JDEVELOPFIXTURECOMP00001",
+            "mode": "add",
+            "invert": false,
+            "kind": "ai",
+            "target": "sky",
+            "model": "sam2-tiny",
+            "modelVersion": "2.1",
+            "prompts": []
+          },
+          {
+            "id": "01JDEVELOPFIXTURECOMP00002",
+            "mode": "intersect",
+            "invert": false,
+            "kind": "ai",
+            "target": "depth",
+            "model": "depth-anything-v2-small",
+            "modelVersion": "2.0",
+            "prompts": [
+              {
+                "kind": "point",
+                "point": [
+                  0.4,
+                  0.3
+                ],
+                "positive": true
+              },
+              {
+                "kind": "box",
+                "box": [
+                  [
+                    0.1,
+                    0.1
+                  ],
+                  [
+                    0.6,
+                    0.5
+                  ]
+                ],
+                "positive": false
+              }
+            ],
+            "depthRange": [
+              0.6,
+              1
+            ]
+          },
+          {
+            "id": "01JDEVELOPFIXTURECOMP00003",
+            "mode": "subtract",
+            "invert": false,
+            "kind": "linear",
+            "from": [
+              0.5,
+              0.2
+            ],
+            "to": [
+              0.5,
+              0.6
+            ]
+          }
+        ],
+        "adjustments": {
+          "exposure": -0.5,
+          "contrast": 0,
+          "highlights": -30,
+          "shadows": 0,
+          "whites": 0,
+          "blacks": 0,
+          "temperature": -8,
+          "tint": 0,
+          "texture": 0,
+          "clarity": 0,
+          "dehaze": 15,
+          "saturation": 10,
+          "sharpness": 0,
+          "noise": 0,
+          "hue": 0
+        }
+      },
+      {
+        "id": "01JDEVELOPFIXTUREMASK00002",
+        "name": "Face",
+        "enabled": false,
+        "invert": true,
+        "opacity": 100,
+        "feather": 0,
+        "components": [
+          {
+            "id": "01JDEVELOPFIXTURECOMP00004",
+            "mode": "add",
+            "invert": false,
+            "kind": "brush",
+            "strokes": [
+              {
+                "points": [
+                  [
+                    0.3,
+                    0.4
+                  ],
+                  [
+                    0.32,
+                    0.41
+                  ],
+                  [
+                    0.35,
+                    0.43
+                  ]
+                ],
+                "size": 8,
+                "feather": 50,
+                "flow": 100,
+                "erase": false
+              },
+              {
+                "points": [
+                  [
+                    0.33,
+                    0.42
+                  ]
+                ],
+                "size": 4,
+                "feather": 0,
+                "flow": 60,
+                "erase": true
+              }
+            ]
+          },
+          {
+            "id": "01JDEVELOPFIXTURECOMP00005",
+            "mode": "add",
+            "invert": true,
+            "kind": "radial",
+            "center": [
+              0.5,
+              0.45
+            ],
+            "radii": [
+              0.2,
+              0.3
+            ],
+            "angle": 12.5,
+            "feather": 50
+          },
+          {
+            "id": "01JDEVELOPFIXTURECOMP00006",
+            "mode": "intersect",
+            "invert": false,
+            "kind": "luminance",
+            "range": [
+              0.2,
+              0.75
+            ],
+            "feather": 20
+          },
+          {
+            "id": "01JDEVELOPFIXTURECOMP00007",
+            "mode": "subtract",
+            "invert": false,
+            "kind": "color",
+            "samples": [
+              "#c8a080",
+              "#d0a888"
+            ],
+            "tolerance": 35
+          }
+        ],
+        "adjustments": {
+          "exposure": 0,
+          "contrast": 0,
+          "highlights": 0,
+          "shadows": 0,
+          "whites": 0,
+          "blacks": 0,
+          "temperature": 0,
+          "tint": 3,
+          "texture": -15,
+          "clarity": -20,
+          "dehaze": 0,
+          "saturation": 0,
+          "sharpness": -10,
+          "noise": 25,
+          "hue": 5
+        }
+      }
+    ]
+  },
+  "canonical": "{\"color\":{\"mix\":{\"aqua\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"blue\":{\"hue\":-20,\"luminance\":-25,\"saturation\":30},\"green\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"magenta\":{\"hue\":100,\"luminance\":0,\"saturation\":0},\"orange\":{\"hue\":0,\"luminance\":12,\"saturation\":-15},\"purple\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"red\":{\"hue\":5,\"luminance\":3,\"saturation\":-10},\"yellow\":{\"hue\":0,\"luminance\":0,\"saturation\":0}},\"saturation\":-5,\"vibrance\":25},\"curve\":{\"blue\":[[0,0.03],[1,1]],\"green\":[[0,0],[1,0.97]],\"luma\":[[0,0.02],[0.3,0.25],[0.7,0.78],[1,0.98]],\"parametric\":{\"darks\":8,\"highlights\":-10,\"lights\":5,\"shadows\":-3,\"splits\":[0.2,0.55,0.8]},\"red\":[[0,0],[0.5,0.52],[1,1]]},\"detail\":{\"clarity\":18,\"dehaze\":7,\"denoise\":{\"chroma\":60,\"luminance\":40,\"model\":\"nafnet-w32\",\"sharpen\":10},\"sharpen\":{\"amount\":60,\"detail\":30,\"masking\":40,\"radius\":1.2},\"texture\":12},\"geometry\":{\"constrainCrop\":false,\"crop\":{\"angle\":-2.4,\"aspect\":[4,5],\"rect\":{\"h\":0.84,\"w\":0.9,\"x\":0.05,\"y\":0.08}},\"flipH\":true,\"flipV\":false,\"rotate\":90,\"transform\":{\"aspect\":-8,\"horizontal\":4,\"offsetX\":2,\"offsetY\":-3,\"rotate\":1.5,\"scale\":104,\"vertical\":-12},\"upright\":{\"focal\":1.25,\"guides\":[{\"from\":[0.12,0.1],\"id\":\"01JDEVELOPFIXTURE000000001\",\"kind\":\"vertical\",\"to\":[0.15,0.9]},{\"from\":[0.1,0.62],\"id\":\"01JDEVELOPFIXTURE000000002\",\"kind\":\"horizontal\",\"to\":[0.9,0.58]}],\"mode\":\"guided\",\"transform\":[1.02,0.01,-0.015,0.003,0.98,0.012,0.0004,-0.0002,1]}},\"light\":{\"blacks\":-12,\"contrast\":15,\"exposure\":-1.25,\"highlights\":-60,\"shadows\":45,\"whites\":10},\"masks\":[{\"adjustments\":{\"blacks\":0,\"clarity\":0,\"contrast\":0,\"dehaze\":15,\"exposure\":-0.5,\"highlights\":-30,\"hue\":0,\"noise\":0,\"saturation\":10,\"shadows\":0,\"sharpness\":0,\"temperature\":-8,\"texture\":0,\"tint\":0,\"whites\":0},\"components\":[{\"id\":\"01JDEVELOPFIXTURECOMP00001\",\"invert\":false,\"kind\":\"ai\",\"mode\":\"add\",\"model\":\"sam2-tiny\",\"modelVersion\":\"2.1\",\"prompts\":[],\"target\":\"sky\"},{\"depthRange\":[0.6,1],\"id\":\"01JDEVELOPFIXTURECOMP00002\",\"invert\":false,\"kind\":\"ai\",\"mode\":\"intersect\",\"model\":\"depth-anything-v2-small\",\"modelVersion\":\"2.0\",\"prompts\":[{\"kind\":\"point\",\"point\":[0.4,0.3],\"positive\":true},{\"box\":[[0.1,0.1],[0.6,0.5]],\"kind\":\"box\",\"positive\":false}],\"target\":\"depth\"},{\"from\":[0.5,0.2],\"id\":\"01JDEVELOPFIXTURECOMP00003\",\"invert\":false,\"kind\":\"linear\",\"mode\":\"subtract\",\"to\":[0.5,0.6]}],\"enabled\":true,\"feather\":10,\"id\":\"01JDEVELOPFIXTUREMASK00001\",\"invert\":false,\"name\":\"Sky\",\"opacity\":80},{\"adjustments\":{\"blacks\":0,\"clarity\":-20,\"contrast\":0,\"dehaze\":0,\"exposure\":0,\"highlights\":0,\"hue\":5,\"noise\":25,\"saturation\":0,\"shadows\":0,\"sharpness\":-10,\"temperature\":0,\"texture\":-15,\"tint\":3,\"whites\":0},\"components\":[{\"id\":\"01JDEVELOPFIXTURECOMP00004\",\"invert\":false,\"kind\":\"brush\",\"mode\":\"add\",\"strokes\":[{\"erase\":false,\"feather\":50,\"flow\":100,\"points\":[[0.3,0.4],[0.32,0.41],[0.35,0.43]],\"size\":8},{\"erase\":true,\"feather\":0,\"flow\":60,\"points\":[[0.33,0.42]],\"size\":4}]},{\"angle\":12.5,\"center\":[0.5,0.45],\"feather\":50,\"id\":\"01JDEVELOPFIXTURECOMP00005\",\"invert\":true,\"kind\":\"radial\",\"mode\":\"add\",\"radii\":[0.2,0.3]},{\"feather\":20,\"id\":\"01JDEVELOPFIXTURECOMP00006\",\"invert\":false,\"kind\":\"luminance\",\"mode\":\"intersect\",\"range\":[0.2,0.75]},{\"id\":\"01JDEVELOPFIXTURECOMP00007\",\"invert\":false,\"kind\":\"color\",\"mode\":\"subtract\",\"samples\":[\"#c8a080\",\"#d0a888\"],\"tolerance\":35}],\"enabled\":false,\"feather\":0,\"id\":\"01JDEVELOPFIXTUREMASK00002\",\"invert\":true,\"name\":\"Face\",\"opacity\":100}],\"version\":1,\"whiteBalance\":{\"mode\":\"incremental\",\"temperature\":12,\"tint\":-4}}\ndevelop-engine/4",
+  "hash": "e07964a2bb734ed13828463c80dfbeadc572428fa06893b0e456ce8d6ffca08e"
+}

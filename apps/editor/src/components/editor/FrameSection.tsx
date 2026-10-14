@@ -1,7 +1,9 @@
 import { type Frame, type PhotoElement, resolveTheme, type TextElement, tokenOnAxis } from '@photobook/shared';
 import { frameWithField, inchesPerUnit, minFrameSize } from '../../lib/frames';
 import { useBookStore } from '../../store/book';
+import { useDesignBook } from '../../store/design';
 import { isRatioLocked, useUiStore } from '../../store/ui';
+import { buttonClass as buttonLook } from '../ui/Button';
 import { NumberField } from './BookSettings';
 import { deleteSelection, mergeSelection, splitSelection } from './frameActions';
 import { LockIcon, MergeIcon, SplitColumnsIcon, SplitRowsIcon, TrashIcon } from './icons';
@@ -14,15 +16,15 @@ const FIELDS = [
   { key: 'h', label: 'H', name: 'Height' },
 ] as const;
 
-const actionButton =
-  'flex items-center gap-1.5 rounded-md border border-line bg-panel-2 px-2 py-1.5 text-left text-xs hover:border-accent disabled:opacity-50 disabled:hover:border-line';
+// Plan 45: the look of a `Button` (components/ui) on these plain buttons.
+const actionButton = `${buttonLook({ size: 'sm' })} gap-1.5 text-left`;
 
 /**
  * Frame position and size in inches on the 8 in wide reference page (X, Y from the top-left trim),
  * the ratio lock used by the resize handles and by W / H here, and (photos) Split.
  */
 export function FrameSection({ pageId, element }: { pageId: string; element: PhotoElement | TextElement }) {
-  const book = useBookStore((s) => s.book);
+  const book = useDesignBook();
   const setFrames = useBookStore((s) => s.setFrames);
   const locked = useUiStore((s) => isRatioLocked(s, element));
   const setRatioLock = useUiStore((s) => s.setRatioLock);
@@ -70,7 +72,7 @@ export function FrameSection({ pageId, element }: { pageId: string; element: Pho
           title={
             locked
               ? 'Locked: resizing keeps the shape (hold Shift while dragging to resize freely)'
-              : 'Free: resizing changes the shape'
+              : 'Free: resizing changes the shape (hold Shift while dragging to keep it)'
           }
           className={`flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs ${
             locked ? 'border-accent/60 text-fg' : 'border-line text-fg-muted hover:text-fg'
@@ -103,7 +105,8 @@ export function FrameSection({ pageId, element }: { pageId: string; element: Pho
         </div>
       )}
       <p className="text-[11px] text-fg-muted leading-relaxed">
-        Drag a handle to resize (Shift: free ratio, Cmd: no snapping). Arrow keys nudge one grid step, Shift ten.
+        Drag a handle to resize (Shift: the other ratio mode, {locked ? 'free' : 'keep the shape'}; Alt: from the
+        centre; Cmd: no snapping). Arrow keys nudge one grid step, Shift ten.
       </p>
     </Section>
   );

@@ -1,7 +1,16 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Main window. No fs or shell access from the webview: disk access goes through the app's own commands (src/scope.rs); the asset protocol serves the cache and the open book's folder.",
+  "description": "Main window. No fs or shell access from the webview: disk access goes through the app's own commands (src/scope.rs); the asset protocol serves the cache and the imported folders. Clipboard access is text only (Develop copy and paste). The window drags from the top bar (`data-tauri-drag-region`, plan 43).",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:default", "dialog:allow-open", "log:default", "core:window:allow-destroy"]
+  "permissions": [
+    "core:default",
+    "dialog:default",
+    "dialog:allow-open",
+    "log:default",
+    "core:window:allow-destroy",
+    "core:window:allow-start-dragging",
+    "clipboard-manager:allow-read-text",
+    "clipboard-manager:allow-write-text"
+  ]
 }

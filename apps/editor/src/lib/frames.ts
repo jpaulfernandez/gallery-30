@@ -191,6 +191,45 @@ export function bleedBounds(kind: Element['type'], bleed: number, template: Size
 }
 
 /**
+ * The (dx, dy) that keeps every frame of a group on the page (each by its own bounds, as
+ * `clampMovedFrame`), closest to the wanted one: the group moves as a block and stops when its
+ * first member reaches the edge. On an axis where no shift fits every member (the group is wider
+ * than the page plus the bleed), it returns 0 for that axis.
+ */
+export function clampGroupDelta(
+  items: ReadonlyArray<{ frame: Frame; kind: Element['type'] }>,
+  dx: number,
+  dy: number,
+  bleed: number,
+  template: Size,
+): { dx: number; dy: number } {
+  let lo = { x: Number.NEGATIVE_INFINITY, y: Number.NEGATIVE_INFINITY };
+  let hi = { x: Number.POSITIVE_INFINITY, y: Number.POSITIVE_INFINITY };
+  for (const { frame: f, kind } of items) {
+    const b = bleedBounds(kind, bleed, template);
+    lo = { x: Math.max(lo.x, -b.x - f.x), y: Math.max(lo.y, -b.y - f.y) };
+    hi = { x: Math.min(hi.x, 1 + b.x - f.w - f.x), y: Math.min(hi.y, 1 + b.y - f.h - f.y) };
+  }
+  const keep = (n: number, a: number, b: number) => (a > b + 1e-12 ? 0 : Math.min(Math.max(n, a), b));
+  return { dx: keep(dx, lo.x, hi.x), dy: keep(dy, lo.y, hi.y) };
+}
+
+/**
+ * Keep a moved frame on the page. Photos may run into the bleed (`theme.bleed` past the trim, a
+ * fraction of the width; the same distance on the y axis), text stays inside the trim. Used by
+ * drags, nudges and the alignment actions (`components/editor/frameMove.ts` re-exports it).
+ */
+export function clampMovedFrame(frame: Frame, kind: Element['type'], bleed: number, template: Size): Frame {
+  const { x: bx, y: by } = bleedBounds(kind, bleed, template);
+  const keep = (n: number, lo: number, hi: number) => Math.min(Math.max(n, lo), Math.max(lo, hi));
+  return {
+    ...frame,
+    x: clean(keep(frame.x, -bx, 1 + bx - frame.w)),
+    y: clean(keep(frame.y, -by, 1 + by - frame.h)),
+  };
+}
+
+/**
  * Enforce the minimum size and keep a resized frame inside the page plus `bounds` past the trim
  * (default none: 0..1; photos get the bleed, see `bleedBounds`), with the edges the handle does
  * not move anchored where they were in `start`. Locked frames keep `start`'s aspect (an edge

@@ -1,5 +1,5 @@
 import type { Book } from '@photobook/shared';
-import type { AssetFile } from '../../store/assets';
+import { type AssetFile, fileOfAsset } from '../../store/assets';
 
 /** Desktop preview's right column (320 px): the current page's photos as square thumbnails. */
 export function PhotoPanel({
@@ -19,16 +19,16 @@ export function PhotoPanel({
 
   return (
     <aside
-      className="flex h-full w-[320px] shrink-0 flex-col gap-3 overflow-y-auto border-l border-line bg-[#141414] p-4"
+      className="flex h-full w-[320px] shrink-0 flex-col gap-3 scrollbar overflow-x-hidden overflow-y-auto border-l border-line bg-stage p-4"
       aria-label="Photos on this page"
     >
-      <h2 className="label">Photos on this page</h2>
+      <h2 className="section-title">Photos on this page</h2>
       {assetIds.length === 0 ? (
         <p className="text-fg-muted">No photos on this page</p>
       ) : (
         <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0">
           {assetIds.map((id) => {
-            const file = files[book.assets[id]?.path ?? ''];
+            const file = book.assets[id] ? fileOfAsset(files, id) : undefined;
             const src = file?.thumbUrl ?? file?.proxyUrl;
             return (
               <li key={id} className="aspect-square overflow-hidden rounded bg-panel-2">

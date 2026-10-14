@@ -1,0 +1,678 @@
+{
+  "cases": [
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.75,
+        "angle": 0.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.75
+      }
+    },
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.75,
+        "angle": 5.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.6655259184384463
+      }
+    },
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.75,
+        "angle": -5.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.6655259184384463
+      }
+    },
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.75,
+        "angle": 30.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.4641016151377546
+      }
+    },
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.75,
+        "angle": -30.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.4641016151377546
+      }
+    },
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.75,
+        "angle": 45.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.4242640687119285
+      }
+    },
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.75,
+        "angle": -45.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.4242640687119285
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.75,
+        "angle": 0.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.75
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.75,
+        "angle": 5.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.6655259184384463
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.75,
+        "angle": -5.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.6655259184384463
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.75,
+        "angle": 30.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.4641016151377546
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.75,
+        "angle": -30.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.4641016151377546
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.75,
+        "angle": 45.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.4242640687119285
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.75,
+        "angle": -45.0,
+        "b": 0.5,
+        "r": 1.5
+      },
+      "output": {
+        "halfWidth": 0.4242640687119285
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.75,
+        "angle": 0.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.5
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.75,
+        "angle": 5.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.4615311732486018
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.75,
+        "angle": -5.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.4615311732486018
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.75,
+        "angle": 30.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.36602540378443865
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.75,
+        "angle": -30.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.36602540378443865
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.75,
+        "angle": 45.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.3535533905932738
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.75,
+        "angle": -45.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.3535533905932738
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.75,
+        "angle": 0.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.75
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.75,
+        "angle": 5.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.7175524206195025
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.75,
+        "angle": -5.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.7175524206195025
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.75,
+        "angle": 30.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.5065141315447438
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.75,
+        "angle": -30.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.5065141315447438
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.75,
+        "angle": 45.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.4525483399593904
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.75,
+        "angle": -45.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.4525483399593904
+      }
+    },
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 0.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.3333333333333333
+      }
+    },
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 5.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.29578929708375395
+      }
+    },
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": -5.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.29578929708375395
+      }
+    },
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 30.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.20626738450566867
+      }
+    },
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": -30.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.20626738450566867
+      }
+    },
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 45.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.18856180831641264
+      }
+    },
+    {
+      "aspectLabel": "free",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": -45.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.18856180831641264
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 0.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.3333333333333333
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 5.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.29578929708375395
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": -5.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.29578929708375395
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 30.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.20626738450566867
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": -30.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.20626738450566867
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 45.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.18856180831641264
+      }
+    },
+    {
+      "aspectLabel": "original",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": -45.0,
+        "b": 0.5,
+        "r": 0.6666666666666666
+      },
+      "output": {
+        "halfWidth": 0.18856180831641264
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 0.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.3333333333333333
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 5.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.30768744883240123
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": -5.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.30768744883240123
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 30.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.24401693585629242
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": -30.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.24401693585629242
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 45.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.23570226039551584
+      }
+    },
+    {
+      "aspectLabel": "1:1",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": -45.0,
+        "b": 0.5,
+        "r": 1.0
+      },
+      "output": {
+        "halfWidth": 0.23570226039551584
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 0.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.3333333333333333
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 5.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.31891218694200113
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": -5.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.31891218694200113
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 30.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.29054343205980837
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": -30.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.29054343205980837
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": 45.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.30169889330626026
+      }
+    },
+    {
+      "aspectLabel": "16:9",
+      "input": {
+        "a": 0.3333333333333333,
+        "angle": -45.0,
+        "b": 0.5,
+        "r": 1.7777777777777777
+      },
+      "output": {
+        "halfWidth": 0.30169889330626026
+      }
+    }
+  ],
+  "function": "fixedAspectHalfWidth",
+  "tolerance": 1e-9
+}

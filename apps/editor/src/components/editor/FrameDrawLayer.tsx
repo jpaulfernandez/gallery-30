@@ -2,6 +2,7 @@ import type { BookTemplate, Frame } from '@photobook/shared';
 import { type PointerEvent as ReactPointerEvent, useEffect, useRef, useState } from 'react';
 import { fitResized, inchesPerUnit, minFrameSize, pointToPage, rectFromDrag } from '../../lib/frames';
 import { useBookStore } from '../../store/book';
+import { currentDesignBook } from '../../store/design';
 import { useUiStore } from '../../store/ui';
 import { MOVE_THRESHOLD } from './frameMove';
 import { clearSnapGuides, setSnapGuides, snapElementFrame } from './snap';
@@ -47,7 +48,7 @@ export function startFrameDraw({
   bypassSnap,
   onPreview,
 }: FrameDrawStart): () => void {
-  const book = useBookStore.getState().book;
+  const book = currentDesignBook();
   if (!book || pageRect.width === 0 || pageRect.height === 0) return () => {};
   const min = minFrameSize(book.template, 'photo');
   const anchor = snapPoint(pageId, pointToPage(clientX, clientY, pageRect), bypassSnap);
@@ -131,18 +132,13 @@ export function FrameDrawLayer({
 
   const per = inchesPerUnit(template);
   return (
-    <div
-      data-canvas-ui
-      data-frame-draw
-      className="absolute inset-0 z-[5] cursor-crosshair"
-      onPointerDown={onPointerDown}
-    >
+    <div data-canvas-ui data-frame-draw className="absolute inset-0 z-[5] cursor-draw" onPointerDown={onPointerDown}>
       {preview && (
         <div
           className="pointer-events-none absolute bg-accent/10 outline-2 outline-accent outline-dashed"
           style={{ left: pct(preview.x), top: pct(preview.y), width: pct(preview.w), height: pct(preview.h) }}
         >
-          <span className="absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-sm bg-accent px-1 py-px font-medium text-[10px] text-white tabular-nums leading-tight">
+          <span className="absolute top-full left-1/2 mt-1 -translate-x-1/2 whitespace-nowrap rounded-sm bg-accent px-1 py-px font-medium text-[10px] text-accent-ink tabular-nums leading-tight">
             {(preview.w * per.x).toFixed(2)} × {(preview.h * per.y).toFixed(2)} in
           </span>
         </div>

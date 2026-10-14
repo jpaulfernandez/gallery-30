@@ -1,0 +1,57 @@
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Hand-written test sidecar">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about=""
+    xmlns:tiff="http://ns.adobe.com/tiff/1.0/"
+    xmlns:exif="http://ns.adobe.com/exif/1.0/"
+    xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
+   tiff:Orientation="6"
+   exif:PixelXDimension="6000"
+   exif:PixelYDimension="4000"
+   crs:Version="15.4"
+   crs:ProcessVersion="15.4"
+   crs:WhiteBalance="Custom"
+   crs:Temperature="4850"
+   crs:Tint="+12"
+   crs:HasCrop="True"
+   crs:CropTop="0.2"
+   crs:CropLeft="0.1"
+   crs:CropBottom="0.9"
+   crs:CropRight="0.7"
+   crs:CropAngle="2.5"
+   crs:CropConstrainToWarp="0"
+   crs:PerspectiveUpright="5"
+   crs:PerspectiveVertical="-20"
+   crs:PerspectiveHorizontal="+10"
+   crs:PerspectiveRotate="+1.5"
+   crs:PerspectiveScale="95"
+   crs:PerspectiveAspect="+15"
+   crs:PerspectiveX="+4"
+   crs:PerspectiveY="-6"
+   crs:UprightVersion="151388160"
+   crs:UprightCenterMode="0"
+   crs:UprightCenterNormX="0.5"
+   crs:UprightCenterNormY="0.5"
+   crs:UprightFocalMode="0"
+   crs:UprightFocalLength35mm="27"
+   crs:UprightPreview="False"
+   crs:UprightTransformCount="6"
+   crs:UprightTransform_0="1,0,0,0,1,0,0,0,1"
+   crs:UprightTransform_5="1.02,0.01,-0.015,0,0.98,0.01,0.02,0,1"
+   crs:UprightFourSegmentsCount="4"
+   crs:UprightFourSegments_0="0.1,0.2,0.9,0.25"
+   crs:UprightFourSegments_1="0.1,0.8,0.9,0.75"
+   crs:UprightFourSegments_2="0.2,0.1,0.25,0.9"
+   crs:UprightFourSegments_3="0.8,0.1,0.75,0.9">
+   <crs:MaskGroupBasedCorrections>
+    <rdf:Seq>
+     <rdf:li>
+      <rdf:Description crs:What="Correction" crs:CorrectionAmount="1" crs:LocalExposure2012="0.25"/>
+     </rdf:li>
+     <rdf:li>
+      <rdf:Description crs:What="Correction" crs:CorrectionAmount="1" crs:LocalClarity2012="-0.3"/>
+     </rdf:li>
+    </rdf:Seq>
+   </crs:MaskGroupBasedCorrections>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>

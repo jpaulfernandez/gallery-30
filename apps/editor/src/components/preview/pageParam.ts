@@ -1,12 +1,15 @@
 /**
- * The preview's current page lives in the hash query: `#/book/preview?page=3` (1-based).
+ * The preview's current page lives in the hash query: `#/project/<id>/preview?page=3` (1-based).
  *
  * The router uses hash history and the route has no `validateSearch`, so this reads and writes
  * `window.location.hash` directly. Writes use `history.replaceState` (no history entry per swipe,
  * and the router is not re-run); the history state object is kept so the router's bookkeeping survives.
  */
 
-export const PREVIEW_PATH = '/book/preview';
+/** The preview route of project `id`. */
+export const previewPath = (id: string): string => `/project/${id}/preview`;
+
+const PREVIEW_PATTERN = /^\/project\/[^/]+\/preview$/;
 
 function splitHash(): { path: string; params: URLSearchParams } {
   const raw = window.location.hash.replace(/^#/, '');
@@ -27,13 +30,13 @@ export function readPreviewPage(): number | null {
 /** Write the 1-based `page` into the hash with `replaceState`. No-op when not on the preview route. */
 export function writePreviewPage(page: number): void {
   const { path, params } = splitHash();
-  if (path !== PREVIEW_PATH) return;
+  if (!PREVIEW_PATTERN.test(path)) return;
   params.set('page', String(page));
   const url = `${window.location.pathname}${window.location.search}#${path}?${params.toString()}`;
   window.history.replaceState(window.history.state, '', url);
 }
 
-/** Hash to assign to `window.location.hash` (or use as an href) to open the preview on a 1-based page. */
-export function previewHref(page?: number): string {
-  return page === undefined ? `#${PREVIEW_PATH}` : `#${PREVIEW_PATH}?page=${page}`;
+/** Hash to assign to `window.location.hash` (or use as an href) to open project `id`'s preview on a 1-based page. */
+export function previewHref(id: string, page?: number): string {
+  return page === undefined ? `#${previewPath(id)}` : `#${previewPath(id)}?page=${page}`;
 }

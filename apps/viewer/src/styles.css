@@ -337,6 +337,11 @@ input {
   object-fit: cover;
 }
 
+.pv-card-locked img {
+  filter: blur(16px) brightness(0.6);
+  transform: scale(1.1);
+}
+
 .pv-card-title {
   display: block;
   margin-top: 8px;

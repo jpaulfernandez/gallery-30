@@ -42,6 +42,18 @@ Use one gutter value per page. Never mix 0.2 in and 0.4 in gaps on the same page
 
 A photo either bleeds or sits inside the safe margin. Nothing in between.
 
+### Smart guides (editor)
+
+Besides the rules above, the editor's snapping offers two guides that keep a page's rhythm without numbers:
+
+- **Equal spacing**: a moved photo snaps to the spot where its gaps to two neighbours in the same row or column are
+  equal (centred between them, or after or before a pair at the pair's own gap). The guide reads "equal".
+- **Same size**: a resized photo snaps to a neighbour's width or height. The guide reads "same width" or "same
+  height".
+
+**Tidy** (alignment toolbar) and **Fix spacing** (after a drop that leaves a row's gaps uneven) give a row one gap,
+put through the photo-to-photo rule above, so a page keeps a single gutter.
+
 ### Text
 
 - Text always sits inside the 0.64 in safe margin and never in the bleed.

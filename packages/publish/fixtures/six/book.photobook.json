@@ -1,8 +1,12 @@
 {
-  "version": 3,
+  "version": 8,
   "id": "01FIXTUREBOOK00000000000001",
   "title": "Six photos",
-  "sourceFolder": "/fixtures/six",
+  "folders": {
+    "01FIXTUREFOLDER0000000000F1": {
+      "path": "."
+    }
+  },
   "template": {
     "name": "phone-portrait",
     "width": 1080,
@@ -24,6 +28,7 @@
   "assets": {
     "01FIXTUREASSET0000000000A1": {
       "path": "DSCF2001.jpg",
+      "folder": "01FIXTUREFOLDER0000000000F1",
       "hash": "f9a547cdccc3104877b34cae7ed984f1535c1c6f9a77c621b8425546d8e2dbf9",
       "width": 1200,
       "height": 800,
@@ -33,6 +38,7 @@
     },
     "01FIXTUREASSET0000000000A2": {
       "path": "DSCF2002.jpg",
+      "folder": "01FIXTUREFOLDER0000000000F1",
       "hash": "3e441c49a4dff1578d6ba729988ee6c2ac6fbefeaeaf82f2e28ea14b23421b4e",
       "width": 800,
       "height": 1200,
@@ -42,6 +48,7 @@
     },
     "01FIXTUREASSET0000000000A3": {
       "path": "DSCF2003.jpg",
+      "folder": "01FIXTUREFOLDER0000000000F1",
       "hash": "fa8ed82f6ae647cccfa12e55e92590e6c8fb7abc36d383b73c6e332713374a6d",
       "width": 1200,
       "height": 800,
@@ -51,6 +58,7 @@
     },
     "01FIXTUREASSET0000000000A4": {
       "path": "DSCF2004.jpg",
+      "folder": "01FIXTUREFOLDER0000000000F1",
       "hash": "3af98a1060d350a62da3c8be2c5d14011079a606e0c803e481ea74f36e9f4b0c",
       "width": 800,
       "height": 1200,
@@ -60,6 +68,7 @@
     },
     "01FIXTUREASSET0000000000A5": {
       "path": "DSCF2005.jpg",
+      "folder": "01FIXTUREFOLDER0000000000F1",
       "hash": "8440ffd9cfd58f95f4fe518c9b6e32f328071c4e61c32f40f301fad0c57490cc",
       "width": 800,
       "height": 1200,
@@ -69,6 +78,7 @@
     },
     "01FIXTUREASSET0000000000A6": {
       "path": "DSCF2006.jpg",
+      "folder": "01FIXTUREFOLDER0000000000F1",
       "hash": "6e00631c536ca3588bd09505110a8f47b03a2cafc623f426578ffc580684b101",
       "width": 900,
       "height": 900,
@@ -115,7 +125,13 @@
           "align": "left"
         }
       ],
-      "notes": "designer only, stripped by publish"
+      "notes": "designer only, stripped by publish",
+      "guides": [
+        {
+          "axis": "x",
+          "value": 0.5
+        }
+      ]
     },
     {
       "id": "01FIXTUREPAGE00000000000002",
@@ -160,7 +176,8 @@
           "rotate": 0,
           "filter": "none"
         }
-      ]
+      ],
+      "guides": []
     },
     {
       "id": "01FIXTUREPAGE00000000000003",
@@ -203,14 +220,19 @@
           "rotate": 0,
           "filter": "none"
         }
-      ]
+      ],
+      "guides": []
     }
   ],
   "publish": {
     "slug": "fixture-six",
     "visibility": "listed",
     "lastPublishedAt": null,
-    "r2Prefix": "fx6pre"
+    "r2Prefix": "fx6pre",
+    "password": null
   },
-  "customLayouts": []
+  "customLayouts": [],
+  "outputProfile": "srgb",
+  "outputs": [],
+  "captions": {}
 }

@@ -1,8 +1,18 @@
 import type { Asset, Book } from '@photobook/shared';
 import { describe, expect, it } from 'vitest';
-import { type HashMany, planRelinks, referencedAssetIds, relativeInside, type ScannedLike } from './relink';
+import {
+  type FolderScan,
+  type HashMany,
+  type MissingAsset,
+  planCrossFolderRelinks,
+  planRelinks,
+  referencedAssetIds,
+  relativeInside,
+  type ScannedLike,
+} from './relink';
 
 const asset = (path: string, hash: string | undefined, size: number | undefined): Asset => ({
+  folder: 'F',
   path,
   ...(hash !== undefined ? { hash } : {}),
   ...(size !== undefined ? { size } : {}),
@@ -153,6 +163,22 @@ describe('referencedAssetIds', () => {
     ] as unknown as Book['pages'];
     expect([...referencedAssetIds({ pages })].sort()).toEqual(['a', 'bg']);
   });
+
+  it("counts a post's frames too, so a photo only a post uses is Missing, not pruned", () => {
+    const frame = { id: 'f1', layout: 'x', background: { asset: 'post-bg' }, elements: [], guides: [] };
+    const outputs = [
+      {
+        id: 'o',
+        name: 'Post',
+        createdAt: 1,
+        kind: 'social',
+        network: 'instagram-carousel',
+        frames: [frame],
+        caption: '',
+      },
+    ] as Book['outputs'];
+    expect([...referencedAssetIds({ pages: [], outputs })]).toEqual(['post-bg']);
+  });
 });
 
 describe('relativeInside', () => {
@@ -167,5 +193,95 @@ describe('relativeInside', () => {
     expect(relativeInside('/Users/me/trip', '/Users/me/trip-2/a.jpg')).toBeNull();
     expect(relativeInside('/Users/me/trip', '/Users/me/trip/../x/a.jpg')).toBeNull();
     expect(relativeInside('/Users/me/trip', '/Users/me/trip')).toBeNull();
+  });
+});
+
+describe('planCrossFolderRelinks', () => {
+  const missing = (assetId: string, path: string, hash?: string, size?: number, folder?: string): MissingAsset => ({
+    assetId,
+    path,
+    ...(hash !== undefined ? { hash } : {}),
+    ...(size !== undefined ? { size } : {}),
+    ...(folder !== undefined ? { folder } : {}),
+  });
+  const scan = (id: string, path: string, files: ScannedLike[], claimed: string[] = []): FolderScan => ({
+    id,
+    path,
+    scanned: files,
+    claimed: new Set(claimed),
+  });
+  /** hashIn over fixed tables per folder; records what was asked. */
+  function hasherIn(tables: Record<string, Record<string, string>>) {
+    const asked: Array<[string, string[]]> = [];
+    const hashIn = async (folder: string, relPaths: string[]) => {
+      asked.push([folder, relPaths]);
+      return new Map(relPaths.map((p) => [p, tables[folder]?.[p] ?? null] as const));
+    };
+    return { hashIn, asked };
+  }
+
+  it('finds a photo in another folder by size then hash, preferring its old file name', async () => {
+    const { hashIn, asked } = hasherIn({
+      '/b': { 'x.jpg': 'h1', 'sub/a.jpg': 'h1', 'big.jpg': 'h9' },
+    });
+    const plan = await planCrossFolderRelinks(
+      [missing('A', 'a.jpg', 'h1', 10)],
+      [
+        scan('FA', '/a', [{ relPath: 'other.jpg', size: 3 }]),
+        scan('FB', '/b', [
+          { relPath: 'x.jpg', size: 10 },
+          { relPath: 'sub/a.jpg', size: 10 },
+          { relPath: 'big.jpg', size: 99 },
+        ]),
+      ],
+      hashIn,
+    );
+    expect(plan.relinks).toEqual([
+      { assetId: 'A', fromFolder: undefined, from: 'a.jpg', folderId: 'FB', folderPath: '/b', to: 'sub/a.jpg' },
+    ]);
+    expect(plan.missing).toEqual([]);
+    // /a has nothing of the right size, so it is not hashed; in /b only the size matches are.
+    expect(asked).toEqual([['/b', ['x.jpg', 'sub/a.jpg']]]);
+  });
+
+  it('never takes a claimed file, gives each file to one asset, and stops hashing once all are found', async () => {
+    const { hashIn, asked } = hasherIn({
+      '/a': { 'dup1.jpg': 'h1', 'dup2.jpg': 'h1' },
+      '/b': { 'c.jpg': 'h1' },
+    });
+    const plan = await planCrossFolderRelinks(
+      [missing('A', 'one.jpg', 'h1', 5, '/old'), missing('B', 'two.jpg', 'h1', 5, '/old')],
+      [
+        scan(
+          'FA',
+          '/a',
+          [
+            { relPath: 'owned.jpg', size: 5 },
+            { relPath: 'dup1.jpg', size: 5 },
+            { relPath: 'dup2.jpg', size: 5 },
+          ],
+          ['owned.jpg'],
+        ),
+        scan('FB', '/b', [{ relPath: 'c.jpg', size: 5 }]),
+      ],
+      hashIn,
+    );
+    expect(plan.relinks.map((r) => [r.assetId, r.folderPath, r.to, r.fromFolder])).toEqual([
+      ['A', '/a', 'dup1.jpg', '/old'],
+      ['B', '/a', 'dup2.jpg', '/old'],
+    ]);
+    expect(asked.map(([folder]) => folder)).toEqual(['/a']);
+    expect(plan.hashes.get('/a')?.get('dup1.jpg')).toBe('h1');
+  });
+
+  it('keeps assets with no hash or size, and unmatched ones, missing', async () => {
+    const { hashIn } = hasherIn({ '/b': { 'x.jpg': 'other' } });
+    const plan = await planCrossFolderRelinks(
+      [missing('A', 'a.jpg', 'h1', 10), missing('U', 'u.jpg')],
+      [scan('FB', '/b', [{ relPath: 'x.jpg', size: 10 }])],
+      hashIn,
+    );
+    expect(plan.relinks).toEqual([]);
+    expect(plan.missing.map((m) => m.assetId).sort()).toEqual(['A', 'U']);
   });
 });

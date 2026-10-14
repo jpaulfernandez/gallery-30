@@ -3,7 +3,23 @@
  * editor can stream a publish into its panel. Every message also carries the elapsed time.
  */
 
-export type StepName = 'freeze' | 'plan' | 'images' | 'pages' | 'upload' | 'manifest' | 'site' | 'prune' | 'record';
+export type StepName =
+  | 'freeze'
+  | 'plan'
+  | 'images'
+  | 'pages'
+  | 'upload'
+  | 'manifest'
+  | 'site'
+  | 'prune'
+  | 'record'
+  /** `render-frames` (workflow plan 14): a social post's frames and its caption file. */
+  | 'frames'
+  | 'caption'
+  /** `print` (workflow plan 15): the print-size photos, then the PDF (or proof PNGs). */
+  | 'print'
+  /** `render-slideshow` (workflow plan 16): every video frame of a slideshow as a still. */
+  | 'slideshow';
 
 export type ReportEvent =
   | { type: 'step'; step: StepName; status: 'start' | 'done' | 'skipped'; ms?: number; detail?: string }

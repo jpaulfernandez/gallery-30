@@ -6,17 +6,19 @@ import { basename } from '../../lib/path';
 import { useAssetsStore } from '../../store/assets';
 import type { MissingAsset } from '../../store/relink';
 import { relativeInside } from '../../store/relink';
+import { Button } from '../ui/Button';
 
 interface MissingCellProps {
   asset: MissingAsset;
 }
 
 /**
- * A book photo whose file is gone from the folder. Locate opens the native file dialog and relinks
- * the asset to the chosen file, which must live inside the source folder (the fs scope ends there).
+ * A project photo whose file is gone from its folder and was not found in any imported folder. Locate opens the native
+ * file dialog and relinks the asset to the chosen file, which must live inside that folder (the fs scope ends there).
  */
 export const MissingCell = memo(function MissingCell({ asset }: MissingCellProps) {
-  const folder = useAssetsStore((s) => s.folder);
+  const primary = useAssetsStore((s) => s.folder);
+  const folder = asset.folder ?? primary;
   const busy = useAssetsStore((s) => s.busy);
   const relink = useAssetsStore((s) => s.relink);
   const [working, setWorking] = useState(false);
@@ -37,7 +39,7 @@ export const MissingCell = memo(function MissingCell({ asset }: MissingCellProps
       if (typeof picked !== 'string') return;
       const relPath = relativeInside(folder, picked);
       if (!relPath) {
-        setError('Pick a file inside the book folder');
+        setError(`Pick a file inside ${basename(folder)}`);
         return;
       }
       await relink(asset.assetId, relPath);
@@ -58,16 +60,11 @@ export const MissingCell = memo(function MissingCell({ asset }: MissingCellProps
     >
       <span className="w-full truncate text-[10px] text-fg">{name}</span>
       <span className="text-[10px] text-fg-muted">Missing</span>
-      <button
-        type="button"
-        onClick={locate}
-        disabled={busy || working}
-        className="rounded-md border border-line bg-panel-2 px-1.5 py-0.5 text-[10px] text-fg outline-none hover:border-accent focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
-      >
+      <Button size="sm" onClick={locate} disabled={busy || working} className="h-5 px-1.5 text-[10px]">
         Locate
-      </button>
+      </Button>
       {error && (
-        <span role="alert" className="line-clamp-2 w-full text-[9px] text-red-300 leading-tight">
+        <span role="alert" className="line-clamp-2 w-full text-[9px] text-danger leading-tight">
           {error}
         </span>
       )}

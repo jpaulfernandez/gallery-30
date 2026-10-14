@@ -1,0 +1,16 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`built-in looks > the CLI list 1`] = `
+"oriole      Oriole       80%  Warm negative. Golden highlights over soft, slightly lifted shadows, with gentle contrast and calm greens.
+heron       Heron        80%  Cool negative. Clean, slightly cyan shadows and blue-green foliage, with skin kept neutral.
+starling    Starling     90%  Chrome. Dense, muted color with deep blues and reds and firm contrast.
+kingfisher  Kingfisher   75%  Slide. Vivid, saturated color with deep blues and punchy contrast.
+kestrel     Kestrel      80%  Cine print. Teal shadows and warm skin, a soft highlight roll-off and a glow around bright lights.
+rook        Rook        100%  Pushed black and white. Deep blacks, hard contrast, dark skies and coarse grain.
+magpie      Magpie       85%  Bleach bypass. Silvery, desaturated color with hard contrast and cold shadows.
+dove        Dove         80%  Faded. Lifted blacks, softened whites and quiet, pastel color.
+sparrow     Sparrow      85%  Matte. A flat, lifted black with the midtone contrast kept and muted, earthy color.
+robin       Robin        80%  Portrait soft. Gentle contrast and warm, even skin, with quiet greens and reds.
+owl         Owl          80%  Night. Blue shadows, warm street lights that glow, deep contrast and visible grain.
+egret       Egret        80%  High key. Bright, airy midtones over open shadows, with clean whites and light color."
+`;

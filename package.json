@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "PATH=\"$HOME/.cargo/bin:$PATH\" pnpm --filter editor tauri dev",
     "typecheck": "pnpm -r typecheck",
-    "lint": "biome check .",
+    "lint": "biome check . && node scripts/check-palette.mjs",
     "format": "biome format --write .",
     "build": "pnpm -r build",
     "test": "pnpm -r test"

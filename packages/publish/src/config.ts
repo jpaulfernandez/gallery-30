@@ -22,10 +22,6 @@ export interface PublishConfig {
   };
   /** Origin of the deployed viewer shell (Vercel), for the links the editor shows; optional. */
   viewerUrl: string;
-  /** Plain word; empty means "do not touch the password". */
-  sitePassword: string;
-  /** ISO date after which devices are asked again; null never. */
-  sitePasswordExpiresAt: string | null;
   download: { maxEdge: number; quality: number };
   /** Image workers; defaults to cores - 1. */
   concurrency: number | null;
@@ -41,8 +37,6 @@ export const SETTINGS_KEYS = [
   'R2_PUBLIC_URL',
   'R2_TRANSPORT',
   'VIEWER_URL',
-  'SITE_PASSWORD',
-  'SITE_PASSWORD_EXPIRES_AT',
   'DOWNLOAD_MAX_EDGE',
   'DOWNLOAD_QUALITY',
   'PUBLISH_CONCURRENCY',
@@ -121,8 +115,6 @@ export async function loadConfig({ envPath, env = process.env }: LoadConfigOptio
       transport: transport === 'wrangler' ? 'wrangler' : 's3',
     },
     viewerUrl: get('VIEWER_URL').replace(/\/+$/, ''),
-    sitePassword: get('SITE_PASSWORD'),
-    sitePasswordExpiresAt: get('SITE_PASSWORD_EXPIRES_AT') || null,
     download: {
       maxEdge: Math.round(num(get('DOWNLOAD_MAX_EDGE'), DEFAULT_DOWNLOAD_MAX_EDGE, 'DOWNLOAD_MAX_EDGE')),
       quality: Math.round(num(get('DOWNLOAD_QUALITY'), DEFAULT_DOWNLOAD_QUALITY, 'DOWNLOAD_QUALITY')),

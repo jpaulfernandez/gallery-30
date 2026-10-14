@@ -1,19 +1,13 @@
 import { z } from 'zod';
+import { AccessPasswordSchema } from '../schema.js';
 
 /**
- * `site.json` at the bucket root: the soft password and the listed books. Rewritten by every
- * publish (merging that book in or out by visibility) and by a password change.
+ * `site.json` at the bucket root: the listed books and the social API origin. Rewritten by every
+ * publish (merging that book in or out by visibility). Passwords are per book, in each manifest.
  */
 
-export const SitePasswordSchema = z.object({
-  /** `hashPassword(word, salt)`: SHA-256 hex over `salt + word`. */
-  hash: z.string().regex(/^[0-9a-f]{64}$/),
-  salt: z.string().min(1),
-  /** Bumped on every change; the viewer stores the version it was granted. */
-  version: z.number().int().positive(),
-  /** Grants older than this are asked again; null never expires. */
-  expiresAt: z.iso.datetime({ offset: true }).nullable(),
-});
+/** The old site-wide password, from before passwords moved onto each book. Read, never written anew. */
+export const SitePasswordSchema = AccessPasswordSchema;
 
 export const SiteBookSchema = z.object({
   slug: z.string().min(1),
@@ -22,11 +16,17 @@ export const SiteBookSchema = z.object({
   cover: z.url().nullable(),
   pages: z.number().int().nonnegative(),
   publishedAt: z.iso.datetime({ offset: true }),
+  /** The book has a password: the list blurs its cover. */
+  locked: z.boolean().default(false),
 });
 
 export const SiteSchema = z.object({
-  /** null while no password is set: the viewer shows no prompt. */
-  password: SitePasswordSchema.nullable(),
+  /**
+   * Legacy site-wide password, or null. Still honoured by the viewer for the book list and for
+   * manifests published before per-book passwords (they have no `password` field); publishing
+   * keeps it as it is, and `photobook password clear` removes it.
+   */
+  password: SitePasswordSchema.nullable().default(null),
   /** Listed books only, in publish order. */
   books: z.array(SiteBookSchema),
   /**

@@ -1,0 +1,42 @@
+{
+  "sharp.jpg": {
+    "clipHigh": 0.0002,
+    "clipLow": 0.0,
+    "medianLum": 0.4824
+  },
+  "defocused.jpg": {
+    "clipHigh": 0.0,
+    "clipLow": 0.0,
+    "medianLum": 0.4863
+  },
+  "panned.jpg": {
+    "clipHigh": 0.0,
+    "clipLow": 0.0,
+    "medianLum": 0.4902
+  },
+  "bokeh-portrait.jpg": {
+    "clipHigh": 0.0,
+    "clipLow": 0.0,
+    "medianLum": 0.4902
+  },
+  "blown.jpg": {
+    "clipHigh": 0.7097,
+    "clipLow": 0.0,
+    "medianLum": 0.8824
+  },
+  "dark.jpg": {
+    "clipHigh": 0.0,
+    "clipLow": 0.0003,
+    "medianLum": 0.0588
+  },
+  "silhouette.jpg": {
+    "clipHigh": 0.1999,
+    "clipLow": 0.1878,
+    "medianLum": 0.0275
+  },
+  "high-key.jpg": {
+    "clipHigh": 0.0,
+    "clipLow": 0.0,
+    "medianLum": 0.851
+  }
+}

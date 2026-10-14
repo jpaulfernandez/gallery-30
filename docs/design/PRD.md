@@ -345,6 +345,8 @@ One JSON project file per book, stored next to the photo folder, is the single s
 }
 ```
 
+> Note (Oct 12, 2026): book v8 replaced `sourceFolder` with `folders: Record<id, { path }>` and an asset `folder` id (workflow plan 03); see `packages/shared/src/schema.ts`.
+
 Frames and crops are fractions of the page so the same page renders at any pixel size. Assets are referenced by relative path plus hash, so a renamed or moved file can be re-linked by hash.
 
 **Published manifest** (`manifest.json`, shipped with the site)

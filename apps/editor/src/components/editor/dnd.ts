@@ -5,6 +5,8 @@ import { createContext, type PointerEvent as ReactPointerEvent, useContext } fro
  *
  * Draggables:
  * - filmstrip cell: id = asset id, data `{ kind: 'asset' }`.
+ * - Library tab cell: id `library:<photoKey>`, data `{ kind: 'library', key }` (hashed photos only); a drop adds the
+ *   photo to the project (`addPhotos`) and then acts like a filmstrip photo.
  * - photo slot: id `slot:<elementId>`, started by Alt + drag on a filled slot (Canvas forwards the
  *   pointerdown to the slot's dnd-kit listener through `SlotDragRegistry`).
  * - the floating toolbar's Move handle: id `move:<elementId>`, plain drag.
@@ -21,7 +23,10 @@ import { createContext, type PointerEvent as ReactPointerEvent, useContext } fro
 
 /** Drags that carry a photo (they get the thumbnail drag overlay). */
 export type PhotoDragData =
+  /** A filmstrip photo. `relPath` is the file's key in the assets store (`fileKey`: its relPath in the primary folder). */
   | { kind: 'asset'; assetId: string; relPath: string }
+  /** A photo from the Library tab (`key` = `photoKey`): dropping it adds it to the project first. */
+  | { kind: 'library'; key: string }
   | { kind: 'slot'; pageId: string; elementId: string; assetId: string };
 
 export type LayoutDragData = { kind: 'layout'; layoutId: string };

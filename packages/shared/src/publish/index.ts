@@ -1,3 +1,5 @@
+// Plan 35: alt text, normalised the same way wherever it is saved, published or fingerprinted.
+export { ALT_MAX, normalizeAlt } from './alt.js';
 export { canonicalJson, hasUnpublishedChanges, publishableContent, publishFingerprint } from './fingerprint.js';
 export {
   AVIF_QUALITY,
@@ -36,7 +38,16 @@ export {
   pageAssetIds,
   parseManifest,
 } from './manifest.js';
-export { type AccessGrant, grantIsValid, hashPassword, newSalt, sha256Hex, verifyPassword } from './password.js';
+export {
+  type AccessGrant,
+  createPassword,
+  grantIsValid,
+  hashPassword,
+  newSalt,
+  nextPasswordVersion,
+  sha256Hex,
+  verifyPassword,
+} from './password.js';
 export { ladderSrcSet, resolveFromManifest, resolveImageRecord } from './resolve.js';
 export {
   EMPTY_SITE,

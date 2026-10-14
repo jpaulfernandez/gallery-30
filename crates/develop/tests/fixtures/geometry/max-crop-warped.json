@@ -1,0 +1,666 @@
+{
+  "cases": [
+    {
+      "input": {
+        "frameH": 4000.0,
+        "frameW": 6000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": null,
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 0.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 0.0,
+            "scale": 100.0,
+            "vertical": -30.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "off",
+            "transform": null
+          }
+        }
+      },
+      "label": "vertical-minus-30",
+      "output": {
+        "h": 0.9459329140476169,
+        "w": 0.9459329140476168,
+        "x": 0.027033542976156937,
+        "y": 1.5935031072444872e-12
+      }
+    },
+    {
+      "input": {
+        "frameH": 6000.0,
+        "frameW": 4000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": null,
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 0.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 0.0,
+            "scale": 100.0,
+            "vertical": -30.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "off",
+            "transform": null
+          }
+        }
+      },
+      "label": "vertical-minus-30",
+      "output": {
+        "h": 0.9243248345678821,
+        "w": 0.924324834567882,
+        "x": 0.03783758271596674,
+        "y": 0.0
+      }
+    },
+    {
+      "input": {
+        "frameH": 4000.0,
+        "frameW": 6000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": null,
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 60.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 5.0,
+            "scale": 100.0,
+            "vertical": 0.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "off",
+            "transform": null
+          }
+        }
+      },
+      "label": "horizontal-60-rotate-5",
+      "output": {
+        "h": 0.8556267967104169,
+        "w": 0.8556267967104169,
+        "x": 0.14437320328958317,
+        "y": 0.027800822810938264
+      }
+    },
+    {
+      "input": {
+        "frameH": 6000.0,
+        "frameW": 4000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": null,
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 60.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 5.0,
+            "scale": 100.0,
+            "vertical": 0.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "off",
+            "transform": null
+          }
+        }
+      },
+      "label": "horizontal-60-rotate-5",
+      "output": {
+        "h": 0.8921018590421731,
+        "w": 0.8921018590421731,
+        "x": 0.10789814095697209,
+        "y": 0.03219874550464086
+      }
+    },
+    {
+      "input": {
+        "frameH": 4000.0,
+        "frameW": 6000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": null,
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 0.0,
+            "offsetX": 20.0,
+            "offsetY": 10.0,
+            "rotate": 0.0,
+            "scale": 70.0,
+            "vertical": 0.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "off",
+            "transform": null
+          }
+        }
+      },
+      "label": "scale-70-offset",
+      "output": {
+        "h": 0.6499999999998572,
+        "w": 0.6499999999998572,
+        "x": 0.35000000000014286,
+        "y": 0.3000000014825382
+      }
+    },
+    {
+      "input": {
+        "frameH": 6000.0,
+        "frameW": 4000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": null,
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 0.0,
+            "offsetX": 20.0,
+            "offsetY": 10.0,
+            "rotate": 0.0,
+            "scale": 70.0,
+            "vertical": 0.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "off",
+            "transform": null
+          }
+        }
+      },
+      "label": "scale-70-offset",
+      "output": {
+        "h": 0.5499999999999896,
+        "w": 0.5499999999999896,
+        "x": 0.4500000000000104,
+        "y": 0.2500000009562482
+      }
+    },
+    {
+      "input": {
+        "frameH": 4000.0,
+        "frameW": 6000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": null,
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 50.0,
+            "horizontal": 0.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 0.0,
+            "scale": 100.0,
+            "vertical": 0.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "off",
+            "transform": null
+          }
+        }
+      },
+      "label": "aspect-50",
+      "output": {
+        "h": 0.9536289906461176,
+        "w": 0.9536289906461176,
+        "x": 0.02318550467694121,
+        "y": 0.023185504676941193
+      }
+    },
+    {
+      "input": {
+        "frameH": 6000.0,
+        "frameW": 4000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": null,
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 50.0,
+            "horizontal": 0.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 0.0,
+            "scale": 100.0,
+            "vertical": 0.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "off",
+            "transform": null
+          }
+        }
+      },
+      "label": "aspect-50",
+      "output": {
+        "h": 0.9536289906461176,
+        "w": 0.9536289906461176,
+        "x": 0.023185504676941165,
+        "y": 0.023185504676941193
+      }
+    },
+    {
+      "input": {
+        "frameH": 4000.0,
+        "frameW": 6000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": null,
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 0.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 0.0,
+            "scale": 100.0,
+            "vertical": 0.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "guided",
+            "transform": [
+              1.188363649281757,
+              0.06446848332522802,
+              -0.060354038357723586,
+              0.09312103093822446,
+              1.2001118428071103,
+              -0.08055440892689829,
+              0.127347455051356,
+              0.13690065673171983,
+              1.0
+            ]
+          }
+        }
+      },
+      "label": "upright",
+      "output": {
+        "h": 0.9424170440072385,
+        "w": 0.9424170440072385,
+        "x": 0.0014521296957318668,
+        "y": 0.006244687603352506
+      }
+    },
+    {
+      "input": {
+        "frameH": 6000.0,
+        "frameW": 4000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": null,
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 0.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 0.0,
+            "scale": 100.0,
+            "vertical": 0.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "guided",
+            "transform": [
+              1.188363649281757,
+              0.06446848332522802,
+              -0.060354038357723586,
+              0.09312103093822446,
+              1.2001118428071103,
+              -0.08055440892689829,
+              0.127347455051356,
+              0.13690065673171983,
+              1.0
+            ]
+          }
+        }
+      },
+      "label": "upright",
+      "output": {
+        "h": 0.9424170440049886,
+        "w": 0.9424170440049885,
+        "x": 0.0014521296967861808,
+        "y": 0.0062446876253650085
+      }
+    },
+    {
+      "input": {
+        "frameH": 4000.0,
+        "frameW": 6000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": {
+            "angle": 6.0,
+            "aspect": [
+              1.0,
+              1.0
+            ],
+            "rect": {
+              "h": 1.0,
+              "w": 1.0,
+              "x": 0.0,
+              "y": 0.0
+            }
+          },
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 0.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 0.0,
+            "scale": 100.0,
+            "vertical": 15.0
+          },
+          "upright": {
+            "focal": 0.9,
+            "guides": [],
+            "mode": "vertical",
+            "transform": [
+              1.188363649281757,
+              0.06446848332522802,
+              -0.060354038357723586,
+              0.09312103093822446,
+              1.2001118428071103,
+              -0.08055440892689829,
+              0.127347455051356,
+              0.13690065673171983,
+              1.0
+            ]
+          }
+        }
+      },
+      "label": "upright-manual-square-angle",
+      "output": {
+        "h": 0.9074678759975204,
+        "w": 0.6049785839983469,
+        "x": 0.029961672901136938,
+        "y": 0.04494250928406862
+      }
+    },
+    {
+      "input": {
+        "frameH": 6000.0,
+        "frameW": 4000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": {
+            "angle": 6.0,
+            "aspect": [
+              1.0,
+              1.0
+            ],
+            "rect": {
+              "h": 1.0,
+              "w": 1.0,
+              "x": 0.0,
+              "y": 0.0
+            }
+          },
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 0.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 0.0,
+            "scale": 100.0,
+            "vertical": 15.0
+          },
+          "upright": {
+            "focal": 0.9,
+            "guides": [],
+            "mode": "vertical",
+            "transform": [
+              1.188363649281757,
+              0.06446848332522802,
+              -0.060354038357723586,
+              0.09312103093822446,
+              1.2001118428071103,
+              -0.08055440892689829,
+              0.127347455051356,
+              0.13690065673171983,
+              1.0
+            ]
+          }
+        }
+      },
+      "label": "upright-manual-square-angle",
+      "output": {
+        "h": 0.587047281986688,
+        "w": 0.880570922980032,
+        "x": 0.04361043286277064,
+        "y": 0.051443346836487214
+      }
+    },
+    {
+      "input": {
+        "frameH": 4000.0,
+        "frameW": 6000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": {
+            "angle": -8.0,
+            "aspect": "free",
+            "rect": {
+              "h": 0.5,
+              "w": 0.5,
+              "x": 0.1,
+              "y": 0.1
+            }
+          },
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 20.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 0.0,
+            "scale": 100.0,
+            "vertical": -50.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "off",
+            "transform": null
+          }
+        }
+      },
+      "label": "free-aspect-angle",
+      "output": {
+        "h": 0.8210061806172367,
+        "w": 0.8210061806172367,
+        "x": 0.1449014818125617,
+        "y": 0.08170149419324868
+      }
+    },
+    {
+      "input": {
+        "frameH": 6000.0,
+        "frameW": 4000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": {
+            "angle": -8.0,
+            "aspect": "free",
+            "rect": {
+              "h": 0.5,
+              "w": 0.5,
+              "x": 0.1,
+              "y": 0.1
+            }
+          },
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 20.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 0.0,
+            "scale": 100.0,
+            "vertical": -50.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "off",
+            "transform": null
+          }
+        }
+      },
+      "label": "free-aspect-angle",
+      "output": {
+        "h": 0.78997196528129,
+        "w": 0.78997196528129,
+        "x": 0.13141487509002617,
+        "y": 0.03280363960235666
+      }
+    },
+    {
+      "input": {
+        "frameH": 4000.0,
+        "frameW": 6000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": {
+            "angle": 10.0,
+            "aspect": "free",
+            "rect": {
+              "h": 1.0,
+              "w": 1.0,
+              "x": 0.0,
+              "y": 0.0
+            }
+          },
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 0.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 0.0,
+            "scale": 100.0,
+            "vertical": 0.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "off",
+            "transform": null
+          }
+        }
+      },
+      "label": "no-perspective-angle",
+      "output": {
+        "h": 0.8030322371922382,
+        "w": 0.8030322371922382,
+        "x": 0.09848388140388094,
+        "y": 0.09848388140388092
+      }
+    },
+    {
+      "input": {
+        "frameH": 6000.0,
+        "frameW": 4000.0,
+        "geometry": {
+          "constrainCrop": true,
+          "crop": {
+            "angle": 10.0,
+            "aspect": "free",
+            "rect": {
+              "h": 1.0,
+              "w": 1.0,
+              "x": 0.0,
+              "y": 0.0
+            }
+          },
+          "flipH": false,
+          "flipV": false,
+          "rotate": 0,
+          "transform": {
+            "aspect": 0.0,
+            "horizontal": 0.0,
+            "offsetX": 0.0,
+            "offsetY": 0.0,
+            "rotate": 0.0,
+            "scale": 100.0,
+            "vertical": 0.0
+          },
+          "upright": {
+            "focal": null,
+            "guides": [],
+            "mode": "off",
+            "transform": null
+          }
+        }
+      },
+      "label": "no-perspective-angle",
+      "output": {
+        "h": 0.8030322371922382,
+        "w": 0.8030322371922382,
+        "x": 0.0984838814038809,
+        "y": 0.09848388140388092
+      }
+    }
+  ],
+  "function": "maxCropInWarped",
+  "tolerance": 1e-6
+}

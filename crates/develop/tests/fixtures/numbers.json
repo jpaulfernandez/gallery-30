@@ -1,0 +1,174 @@
+{
+  "settings": {
+    "version": 1,
+    "light": {
+      "exposure": 0.30000000000000004,
+      "contrast": 0,
+      "highlights": 1.0000076293945312,
+      "shadows": 0,
+      "whites": 0,
+      "blacks": 0
+    },
+    "whiteBalance": {
+      "mode": "asShot"
+    },
+    "curve": {
+      "parametric": {
+        "highlights": 0,
+        "lights": 0,
+        "darks": 0,
+        "shadows": 0,
+        "splits": [
+          0.25,
+          0.5,
+          0.75
+        ]
+      },
+      "luma": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "red": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "green": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "blue": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    "color": {
+      "vibrance": 0,
+      "saturation": 0,
+      "mix": {
+        "red": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "orange": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "yellow": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "green": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "aqua": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "blue": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "purple": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "magenta": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        }
+      }
+    },
+    "detail": {
+      "clarity": 0,
+      "texture": 0,
+      "dehaze": 0,
+      "sharpen": {
+        "amount": 40,
+        "radius": 1,
+        "detail": 25,
+        "masking": 0
+      },
+      "denoise": null
+    },
+    "geometry": {
+      "rotate": 0,
+      "flipH": false,
+      "flipV": false,
+      "upright": {
+        "mode": "full",
+        "guides": [],
+        "transform": [
+          1,
+          0.1,
+          -0.000001,
+          1e-7,
+          1.5e+21,
+          123456789012345680000,
+          2.5e-300,
+          -1234.5678,
+          0.3333333333333333
+        ],
+        "focal": 0.000001
+      },
+      "transform": {
+        "vertical": 0,
+        "horizontal": 0,
+        "rotate": 0,
+        "aspect": 0,
+        "scale": 100,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "constrainCrop": true,
+      "crop": {
+        "rect": {
+          "x": 1e-7,
+          "y": 1063639691336433.2,
+          "w": 0.999999,
+          "h": 5e-324
+        },
+        "angle": 44.99999999999999,
+        "aspect": [
+          1.5,
+          1
+        ]
+      }
+    },
+    "masks": []
+  },
+  "canonical": "{\"color\":{\"mix\":{\"aqua\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"blue\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"green\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"magenta\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"orange\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"purple\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"red\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"yellow\":{\"hue\":0,\"luminance\":0,\"saturation\":0}},\"saturation\":0,\"vibrance\":0},\"curve\":{\"blue\":[[0,0],[1,1]],\"green\":[[0,0],[1,1]],\"luma\":[[0,0],[1,1]],\"parametric\":{\"darks\":0,\"highlights\":0,\"lights\":0,\"shadows\":0,\"splits\":[0.25,0.5,0.75]},\"red\":[[0,0],[1,1]]},\"detail\":{\"clarity\":0,\"dehaze\":0,\"denoise\":null,\"sharpen\":{\"amount\":40,\"detail\":25,\"masking\":0,\"radius\":1},\"texture\":0},\"geometry\":{\"constrainCrop\":true,\"crop\":{\"angle\":44.99999999999999,\"aspect\":[1.5,1],\"rect\":{\"h\":5e-324,\"w\":0.999999,\"x\":1e-7,\"y\":1063639691336433.2}},\"flipH\":false,\"flipV\":false,\"rotate\":0,\"transform\":{\"aspect\":0,\"horizontal\":0,\"offsetX\":0,\"offsetY\":0,\"rotate\":0,\"scale\":100,\"vertical\":0},\"upright\":{\"focal\":0.000001,\"guides\":[],\"mode\":\"full\",\"transform\":[1,0.1,-0.000001,1e-7,1.5e+21,123456789012345680000,2.5e-300,-1234.5678,0.3333333333333333]}},\"light\":{\"blacks\":0,\"contrast\":0,\"exposure\":0.30000000000000004,\"highlights\":1.0000076293945312,\"shadows\":0,\"whites\":0},\"masks\":[],\"version\":1,\"whiteBalance\":{\"mode\":\"asShot\"}}\ndevelop-engine/4",
+  "hash": "ff1ccbb98602ca92987f149161efdc08552f6bcbf286e856725c003dcdef64ad"
+}

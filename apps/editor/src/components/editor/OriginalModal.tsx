@@ -2,17 +2,18 @@ import { useEffect, useState } from 'react';
 import { devError, devLog } from '../../lib/log';
 import { basename, join } from '../../lib/path';
 import { fileUrl } from '../../lib/tauri';
-import { useAssetsStore } from '../../store/assets';
+import { fileOfAsset, useAssetsStore } from '../../store/assets';
 import { useBookStore } from '../../store/book';
+import { assetFolder } from '../../store/library';
 import { useUiStore } from '../../store/ui';
 
 /** Full-resolution original on black for inspection. Click or Escape closes. */
 export function OriginalModal() {
   const target = useUiStore((s) => s.originalModal);
   const close = useUiStore((s) => s.closeOriginal);
-  const folder = useBookStore((s) => s.folder);
+  const folder = useBookStore((s) => (target ? assetFolder(s, target.assetId) : null));
   const asset = useBookStore((s) => (target ? s.book?.assets[target.assetId] : undefined));
-  const file = useAssetsStore((s) => (asset ? s.files[asset.path] : undefined));
+  const file = useAssetsStore((s) => (asset ? fileOfAsset(s.files, target?.assetId) : undefined));
   const [failed, setFailed] = useState(false);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset the fallback when another asset opens
@@ -32,7 +33,7 @@ export function OriginalModal() {
       role="dialog"
       aria-modal="true"
       aria-label={`Original: ${basename(asset.path)}`}
-      className="fixed inset-0 z-50 flex cursor-zoom-out flex-col items-center justify-center gap-4 bg-black/95 p-8"
+      className="fixed inset-0 z-50 flex cursor-zoom-out flex-col items-center justify-center gap-4 bg-stage/95 p-8"
       onClick={close}
     >
       {src ? (

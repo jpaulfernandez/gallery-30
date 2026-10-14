@@ -25,3 +25,14 @@ wrangler.local.toml
 
 # Generated test photos (scripts/make-sample-trip.py)
 fixtures/sample-trip/
+
+# Generated burst fixture for cull groups (scripts/make-burst-fixture.py, plan 39)
+fixtures/burst/
+
+# Stock photos for landing-page screenshots (Unsplash)
+fixtures/lisbon-demo/
+apps/site/shots/
+
+# Python bytecode (scripts/, workflow plan 26)
+__pycache__/
+*.pyc

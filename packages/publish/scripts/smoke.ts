@@ -41,7 +41,6 @@ async function main(): Promise<void> {
   const { readFile, writeFile } = await import('node:fs/promises');
   const book = JSON.parse(await readFile(project, 'utf8'));
   book.publish.slug = SLUG;
-  book.sourceFolder = dir;
   await writeFile(project, JSON.stringify(book));
 
   try {

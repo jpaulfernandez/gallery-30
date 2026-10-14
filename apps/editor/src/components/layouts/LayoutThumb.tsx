@@ -180,7 +180,7 @@ export const LayoutThumb = memo(function LayoutThumb({ items, template, classNam
   let n = 0;
   return (
     <div
-      className={`relative overflow-hidden bg-white ${className ?? ''}`}
+      className={`relative overflow-hidden bg-fg ${className ?? ''}`}
       style={{ aspectRatio: `${template.width} / ${template.height}`, containerType: 'inline-size' }}
     >
       {items.map((item, i) => {

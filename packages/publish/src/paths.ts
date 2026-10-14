@@ -1,5 +1,6 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { developRenderName, type OutputProfile } from '@photobook/shared';
 
 /** Tauri identifier of the editor; its app data dir holds the settings file the CLI reads. */
 export const APP_IDENTIFIER = 'com.photobook.editor';
@@ -26,4 +27,20 @@ export function defaultSettingsPath(): string {
 /** Per-project work dir next to the project file: `.photobook-publish/`. */
 export function workDir(projectPath: string): string {
   return join(projectPath, '..', '.photobook-publish');
+}
+
+/** Where the editor writes full-resolution developed renders, inside the source folder. */
+export const DEVELOP_CACHE_DIR = join('.photobook-cache', 'develop');
+
+/**
+ * `<root>/.photobook-cache/develop/<assetHash>-<developHash>[-p3].jpg`: the render of one developed photo in the
+ * book's output profile (`developRenderName`; sRGB when omitted).
+ */
+export function developRenderPath(
+  root: string,
+  assetHash: string,
+  developHash: string,
+  outputProfile: OutputProfile = 'srgb',
+): string {
+  return join(root, DEVELOP_CACHE_DIR, developRenderName(assetHash, developHash, outputProfile));
 }

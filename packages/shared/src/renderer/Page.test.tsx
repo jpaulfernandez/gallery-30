@@ -187,6 +187,21 @@ describe('<Page>', () => {
   });
 });
 
+describe('<Page> and ruler guides (workflow plan 31)', () => {
+  it('ignores page guides: the markup is the same with and without them', () => {
+    const withGuides = {
+      ...heroPage,
+      guides: [
+        { axis: 'x' as const, value: 0.25 },
+        { axis: 'y' as const, value: 0.5 },
+      ],
+    };
+    const bare = { ...heroPage, guides: [] };
+    expect(render(withGuides).outerHTML).toBe(render(bare).outerHTML);
+    expect(render(withGuides, { editable: true }).outerHTML).toBe(render(bare, { editable: true }).outerHTML);
+  });
+});
+
 describe('fixture', () => {
   it('is a valid book in both templates', () => {
     expect(() => BookSchema.parse(fixtureBook)).not.toThrow();

@@ -1,8 +1,10 @@
-import { cp, mkdtemp, readFile, rm } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  createPassword,
+  hashPassword,
   imagePrefix,
   manifestKey,
   pagesPrefix,
@@ -17,7 +19,7 @@ import { createReporter, type ReportEvent } from './log.js';
 import { publish } from './publish.js';
 import { MemoryStore } from './store.js';
 import { hasChromium } from './testChromium.js';
-import { syncPassword, unpublish } from './unpublish.js';
+import { clearSitePassword, unpublish } from './unpublish.js';
 
 const FIXTURE = join(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures', 'six');
 const BASE = 'https://cdn.example.test';
@@ -37,8 +39,6 @@ function config(overrides: Partial<PublishConfig> = {}): PublishConfig {
       transport: 's3',
     },
     viewerUrl: '',
-    sitePassword: '',
-    sitePasswordExpiresAt: null,
     download: { maxEdge: 4096, quality: 88 },
     concurrency: 2,
     social: { apiUrl: '', adminToken: '' },
@@ -130,6 +130,7 @@ describe('publish pipeline', () => {
         cover: manifest.pages[0]?.thumbnail,
         pages: 3,
         publishedAt: manifest.publishedAt,
+        locked: false,
       },
     ]);
 
@@ -217,7 +218,7 @@ describe('publish pipeline', () => {
       `put ${manifestKey('fixture-six')}`,
       `put ${SITE_KEY}`,
     ]);
-    expect(parseSite(store.json(SITE_KEY)).books).toEqual([other]);
+    expect(parseSite(store.json(SITE_KEY)).books).toEqual([{ ...other, locked: false }]);
     expect(parseManifest(store.json(manifestKey('fixture-six'))).listed).toBe(false);
     expect([...store.objects.keys()].filter((k) => k.startsWith('books/other/'))).toEqual([]);
   });
@@ -247,40 +248,37 @@ describe('publish pipeline', () => {
     expect([...store.objects.keys()].filter((k) => k.startsWith(`${prefix}/`))).toHaveLength(55);
   });
 
-  it('sets the password once, keeps it for the same word, bumps the version for a new one', async () => {
+  it('publishes the book password in its manifest and keeps the legacy site password until cleared', async () => {
     const store = new MemoryStore();
-    await publish({
-      projectPath: project,
-      config: config({ sitePassword: 'kyoto' }),
-      reporter: reporter().r,
-      store,
-      record: false,
+    // A site published before per-book passwords: one site-wide password.
+    const legacy = { hash: await hashPassword('old', 'salt'), salt: 'salt', version: 1, expiresAt: null };
+    await store.put(SITE_KEY, new TextEncoder().encode(JSON.stringify({ password: legacy, books: [] })), {
+      contentType: 'application/json',
+      cacheControl: 'no-cache',
     });
-    const v1 = parseSite(store.json(SITE_KEY)).password;
-    expect(v1?.version).toBe(1);
-    expect(await verifyPassword('kyoto', v1 as NonNullable<typeof v1>)).toBe(true);
-    expect(await verifyPassword('Kyoto', v1 as NonNullable<typeof v1>)).toBe(false);
 
-    await publish({
-      projectPath: project,
-      config: config({ sitePassword: ' kyoto ' }),
-      reporter: reporter().r,
-      store,
-      record: false,
-    });
-    expect(parseSite(store.json(SITE_KEY)).password).toEqual(v1);
-
-    // No word configured: the password is left alone.
+    const doc = JSON.parse(await readFile(project, 'utf8'));
+    const password = await createPassword(' kyoto ', null);
+    doc.publish = { ...doc.publish, visibility: 'listed', password };
+    await writeFile(project, JSON.stringify(doc));
     await publish({ projectPath: project, config: config(), reporter: reporter().r, store, record: false });
-    expect(parseSite(store.json(SITE_KEY)).password).toEqual(v1);
 
-    await syncPassword({ store, reporter: reporter().r, word: 'osaka', expiresAt: null });
-    const v2 = parseSite(store.json(SITE_KEY)).password;
-    expect(v2?.version).toBe(2);
-    expect(v2?.salt).not.toBe(v1?.salt);
-    expect(await verifyPassword('osaka', v2 as NonNullable<typeof v2>)).toBe(true);
+    const manifest = parseManifest(store.json(manifestKey('fixture-six')));
+    expect(manifest.password).toEqual(password);
+    expect(await verifyPassword('kyoto', password)).toBe(true);
+    expect(await verifyPassword('Kyoto', password)).toBe(false);
+    const site = parseSite(store.json(SITE_KEY));
+    expect(site.books.map((b) => [b.slug, b.locked])).toEqual([['fixture-six', true]]);
+    expect(site.password).toEqual(legacy);
 
-    await syncPassword({ store, reporter: reporter().r, word: '', expiresAt: null, clear: true });
+    // Password off: the manifest says so explicitly (no fallback to the site password).
+    doc.publish.password = null;
+    await writeFile(project, JSON.stringify(doc));
+    await publish({ projectPath: project, config: config(), reporter: reporter().r, store, record: false });
+    expect(parseManifest(store.json(manifestKey('fixture-six'))).password).toBeNull();
+    expect(parseSite(store.json(SITE_KEY)).books[0]?.locked).toBe(false);
+
+    await clearSitePassword({ store, reporter: reporter().r });
     expect(parseSite(store.json(SITE_KEY)).password).toBeNull();
   });
 
@@ -302,10 +300,10 @@ describe('publish pipeline', () => {
 
 describe('settings file', () => {
   it('round-trips through the dotenv format', () => {
-    const text = serializeEnvFile({ R2_BUCKET: 'photobook', SITE_PASSWORD: 'two words #1', DOWNLOAD_QUALITY: '90' });
+    const text = serializeEnvFile({ R2_BUCKET: 'photobook', VIEWER_URL: 'two words #1', DOWNLOAD_QUALITY: '90' });
     expect(parseEnvFile(text)).toEqual({
       R2_BUCKET: 'photobook',
-      SITE_PASSWORD: 'two words #1',
+      VIEWER_URL: 'two words #1',
       DOWNLOAD_QUALITY: '90',
     });
     expect(parseEnvFile("# c\nA=1\nB='x y'\n\nbad line\n")).toEqual({ A: '1', B: 'x y' });

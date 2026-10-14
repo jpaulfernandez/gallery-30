@@ -4,11 +4,33 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clampCrop, cropFit } from '../lib/crop';
 import { redo, undo, useBookStore } from './book';
 
-const mocks = vi.hoisted(() => ({
-  openBook: vi.fn(async () => null),
-  writeBook: vi.fn(async () => {}),
-  setRecent: vi.fn(async () => {}),
-}));
+const mocks = vi.hoisted(() => {
+  const projects = new Map<string, string>();
+  const folders = ['/trip', '/trip2'].map((path, i) => ({
+    id: `F${i}`,
+    path,
+    name: path.slice(1),
+    addedAt: 1,
+    lastSeen: 1,
+    missing: false,
+  }));
+  return {
+    projects,
+    listFolders: vi.fn(async () => folders),
+    importFolder: vi.fn(async (path: string) => folders.find((f) => f.path === path)),
+    importLegacyBook: vi.fn(async () => null),
+    listProjects: vi.fn(async () => []),
+    createProject: vi.fn(async (id: string, json: string) => {
+      projects.set(id, json);
+      return { id };
+    }),
+    readProject: vi.fn(async (id: string) => projects.get(id) ?? ''),
+    writeProject: vi.fn(async () => {}),
+    setRecent: vi.fn(async () => {}),
+    readLibrary: vi.fn(async () => null),
+    writeLibrary: vi.fn(async () => {}),
+  };
+});
 vi.mock('../lib/tauri', () => mocks);
 
 const history = () => useBookStore.temporal.getState();
@@ -66,13 +88,25 @@ describe('setTemplate', () => {
   });
 });
 
-describe('loadFromFolder template', () => {
-  it('creates a new book with the chosen template, phone portrait by default', async () => {
-    await useBookStore.getState().loadFromFolder('/trip', { template: 'a4-landscape' });
+describe('new project template', () => {
+  it('creates a new project with the chosen template, phone portrait by default', async () => {
+    await useBookStore.getState().createProject({ title: 'Trip', template: 'a4-landscape', folderId: 'F0' });
     expect(book().template).toEqual(templateFor('a4-landscape'));
-    expect(mocks.writeBook).toHaveBeenCalledTimes(1);
+    expect(mocks.createProject).toHaveBeenCalledTimes(1);
 
     await useBookStore.getState().loadFromFolder('/trip2');
     expect(book().template.name).toBe('phone-portrait');
+    expect(book().title).toBe('trip2');
+    expect(mocks.projects.size).toBe(2);
+  });
+});
+
+describe('loadFromFolder', () => {
+  it('opens the folder even when importing its legacy book fails', async () => {
+    mocks.importLegacyBook.mockRejectedValueOnce('renaming book.photobook.json: Permission denied');
+    const opened = await useBookStore.getState().loadFromFolder('/trip');
+    expect(opened).not.toBeNull();
+    expect(mocks.listProjects).toHaveBeenCalled();
+    expect(useBookStore.getState().folder).toBe('/trip');
   });
 });

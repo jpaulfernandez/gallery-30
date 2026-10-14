@@ -159,7 +159,7 @@ export function Reader({ book, resolve, resolveThumb, initialIndex = 0, onIndexC
   if (count === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center text-fg-muted" style={{ background }}>
-        <span className="rounded-full bg-black/55 px-3 py-1.5 text-white">No pages yet</span>
+        <span className="rounded-full bg-stage/55 px-3 py-1.5 text-fg">No pages yet</span>
       </div>
     );
   }
@@ -196,7 +196,7 @@ export function Reader({ book, resolve, resolveThumb, initialIndex = 0, onIndexC
         aria-label="Show all pages"
         aria-expanded={gridOpen}
         onClick={() => setGridOpen((open) => !open)}
-        className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 cursor-pointer rounded-full border-0 bg-black/55 px-3.5 py-1.5 text-[13px] text-white tabular-nums backdrop-blur-md"
+        className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 cursor-pointer rounded-full border-0 bg-stage/55 px-3.5 py-1.5 text-[13px] text-fg tabular-nums backdrop-blur-md"
       >
         {`${current + 1} / ${count}`}
       </button>
@@ -254,7 +254,7 @@ function PageGrid({
       role="dialog"
       aria-label="All pages"
       data-testid="reader-grid"
-      className="absolute inset-0 z-10 overflow-y-auto bg-[#0d0d0d]/95 backdrop-blur-sm"
+      className="absolute inset-0 z-10 scrollbar overflow-x-hidden overflow-y-auto bg-stage/95 backdrop-blur-sm"
     >
       <div
         className="grid"

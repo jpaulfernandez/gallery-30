@@ -1,0 +1,198 @@
+{
+  "settings": {
+    "version": 1,
+    "light": {
+      "exposure": 0,
+      "contrast": 0,
+      "highlights": 0,
+      "shadows": 0,
+      "whites": 0,
+      "blacks": 0
+    },
+    "whiteBalance": {
+      "mode": "asShot"
+    },
+    "curve": {
+      "parametric": {
+        "highlights": 0,
+        "lights": 0,
+        "darks": 0,
+        "shadows": 0,
+        "splits": [
+          0.25,
+          0.5,
+          0.75
+        ]
+      },
+      "luma": [
+        [
+          0,
+          0
+        ],
+        [
+          0.25,
+          0.2
+        ],
+        [
+          0.5,
+          0.48
+        ],
+        [
+          0.8,
+          0.82
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "red": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "green": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ],
+      "blue": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    "color": {
+      "vibrance": 0,
+      "saturation": -5,
+      "mix": {
+        "red": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "orange": {
+          "hue": -5,
+          "saturation": 10,
+          "luminance": 0
+        },
+        "yellow": {
+          "hue": -10,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "green": {
+          "hue": 20,
+          "saturation": -30,
+          "luminance": 0
+        },
+        "aqua": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "blue": {
+          "hue": 0,
+          "saturation": 10,
+          "luminance": 0
+        },
+        "purple": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        },
+        "magenta": {
+          "hue": 0,
+          "saturation": 0,
+          "luminance": 0
+        }
+      }
+    },
+    "detail": {
+      "clarity": 0,
+      "texture": 0,
+      "dehaze": 0,
+      "sharpen": {
+        "amount": 40,
+        "radius": 1,
+        "detail": 25,
+        "masking": 0
+      },
+      "denoise": null
+    },
+    "geometry": {
+      "rotate": 0,
+      "flipH": false,
+      "flipV": false,
+      "upright": {
+        "mode": "off",
+        "guides": [],
+        "transform": null,
+        "focal": null
+      },
+      "transform": {
+        "vertical": 0,
+        "horizontal": 0,
+        "rotate": 0,
+        "aspect": 0,
+        "scale": 100,
+        "offsetX": 0,
+        "offsetY": 0
+      },
+      "constrainCrop": true,
+      "crop": null
+    },
+    "masks": [],
+    "effects": {
+      "grading": {
+        "shadows": {
+          "hue": 215,
+          "saturation": 25
+        },
+        "midtones": {
+          "hue": 210,
+          "saturation": 6
+        },
+        "highlights": {
+          "hue": 35,
+          "saturation": 12
+        },
+        "blending": 50,
+        "balance": -20
+      },
+      "grain": {
+        "amount": 12,
+        "size": 35,
+        "roughness": 55
+      },
+      "vignette": {
+        "amount": -20,
+        "midpoint": 50,
+        "feather": 50,
+        "roundness": 0
+      },
+      "halation": {
+        "amount": 40,
+        "threshold": 80,
+        "radius": 40
+      }
+    }
+  },
+  "canonical": "{\"color\":{\"mix\":{\"aqua\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"blue\":{\"hue\":0,\"luminance\":0,\"saturation\":10},\"green\":{\"hue\":20,\"luminance\":0,\"saturation\":-30},\"magenta\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"orange\":{\"hue\":-5,\"luminance\":0,\"saturation\":10},\"purple\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"red\":{\"hue\":0,\"luminance\":0,\"saturation\":0},\"yellow\":{\"hue\":-10,\"luminance\":0,\"saturation\":0}},\"saturation\":-5,\"vibrance\":0},\"curve\":{\"blue\":[[0,0],[1,1]],\"green\":[[0,0],[1,1]],\"luma\":[[0,0],[0.25,0.2],[0.5,0.48],[0.8,0.82],[1,1]],\"parametric\":{\"darks\":0,\"highlights\":0,\"lights\":0,\"shadows\":0,\"splits\":[0.25,0.5,0.75]},\"red\":[[0,0],[1,1]]},\"detail\":{\"clarity\":0,\"dehaze\":0,\"denoise\":null,\"sharpen\":{\"amount\":40,\"detail\":25,\"masking\":0,\"radius\":1},\"texture\":0},\"effects\":{\"grading\":{\"balance\":-20,\"blending\":50,\"highlights\":{\"hue\":35,\"saturation\":12},\"midtones\":{\"hue\":210,\"saturation\":6},\"shadows\":{\"hue\":215,\"saturation\":25}},\"grain\":{\"amount\":12,\"roughness\":55,\"size\":35},\"halation\":{\"amount\":40,\"radius\":40,\"threshold\":80},\"vignette\":{\"amount\":-20,\"feather\":50,\"midpoint\":50,\"roundness\":0}},\"geometry\":{\"constrainCrop\":true,\"crop\":null,\"flipH\":false,\"flipV\":false,\"rotate\":0,\"transform\":{\"aspect\":0,\"horizontal\":0,\"offsetX\":0,\"offsetY\":0,\"rotate\":0,\"scale\":100,\"vertical\":0},\"upright\":{\"focal\":null,\"guides\":[],\"mode\":\"off\",\"transform\":null}},\"light\":{\"blacks\":0,\"contrast\":0,\"exposure\":0,\"highlights\":0,\"shadows\":0,\"whites\":0},\"masks\":[],\"version\":1,\"whiteBalance\":{\"mode\":\"asShot\"}}\ndevelop-engine/4",
+  "hash": "b28deb40c88709f3594fbcf84db209fa5e75391052fd6e50f4873b2c5b12b386"
+}

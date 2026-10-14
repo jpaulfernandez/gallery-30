@@ -1,5 +1,13 @@
 import { useRouter } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
+import { AiPanel } from '../components/settings/AiPanel';
+// Plan 44: Appearance (the surround).
+import { AppearancePanel } from '../components/settings/AppearancePanel';
+import { ModelsPanel } from '../components/settings/ModelsPanel';
+// Workflow plan 16: FFmpeg for slideshow videos.
+import { ToolsPanel } from '../components/settings/ToolsPanel';
+import { Button } from '../components/ui/Button';
+import { Field, Input, Select } from '../components/ui/Field';
 import { errorMessage } from '../lib/errors';
 import { type PublishEvent, startPublish } from '../lib/publishRunner';
 import { checkHealth } from '../lib/socialApi';
@@ -34,18 +42,6 @@ const SITE_FIELDS: FieldDef[] = [
     placeholder: 'https://your-viewer.vercel.app',
     hint: 'Where the reader is deployed; used for the links',
   },
-  {
-    key: 'SITE_PASSWORD',
-    label: 'Site password',
-    type: 'password',
-    hint: 'The one word friends type once per device. Changing it asks every device again',
-  },
-  {
-    key: 'SITE_PASSWORD_EXPIRES_AT',
-    label: 'Password expires',
-    placeholder: '2027-01-01T00:00:00Z',
-    hint: 'Optional ISO date',
-  },
 ];
 
 const IMAGE_FIELDS: FieldDef[] = [
@@ -69,13 +65,11 @@ const SOCIAL_FIELDS: FieldDef[] = [
   },
 ];
 
-const inputClass =
-  'w-full rounded-md border border-line bg-panel-2 px-2.5 py-1.5 text-fg text-xs outline-none focus:border-accent';
-
 /**
  * Step 2.7: publish settings, stored in `<appdata>/publish.env` (never in the project file) and
- * read by the CLI. "Test connection" runs `photobook doctor`; "Apply password" rewrites
- * `site.json` alone (`photobook password sync`).
+ * read by the CLI. "Test connection" runs `photobook doctor`; "Remove site-wide password" drops the
+ * old password from `site.json` (`photobook password clear`); passwords are set per book now.
+ * Models (D4.2) lists the downloadable ONNX models; it has its own state and does not use Save.
  */
 export function SettingsRoute() {
   const router = useRouter();
@@ -97,7 +91,11 @@ export function SettingsRoute() {
   }, []);
 
   if (!values) {
-    return <div className="p-8 text-fg-muted">{status ?? 'Loading…'}</div>;
+    return (
+      <SettingsPage onBack={() => router.history.back()}>
+        <p className="text-fg-muted">{status ?? 'Loading…'}</p>
+      </SettingsPage>
+    );
   }
   const dirty = JSON.stringify(values) !== JSON.stringify(saved);
   const set = (key: PublishSettingKey, v: string) => setValues((s) => ({ ...s, [key]: v }));
@@ -114,7 +112,7 @@ export function SettingsRoute() {
     }
   };
 
-  const run = async (command: 'doctor' | 'password-sync') => {
+  const run = async (command: 'doctor' | 'password-clear') => {
     if (dirty && !(await save())) return;
     setBusy(true);
     setLog([]);
@@ -148,122 +146,122 @@ export function SettingsRoute() {
   };
 
   const field = (f: FieldDef) => (
-    <label key={f.key} className="block space-y-1">
-      <span className="text-fg-muted text-xs">{f.label}</span>
-      <input
+    <Field key={f.key} label={f.label} hint={f.hint}>
+      <Input
         type={f.type ?? 'text'}
         value={values[f.key] ?? ''}
         onChange={(e) => set(f.key, e.target.value)}
         placeholder={f.placeholder}
         spellCheck={false}
         autoComplete="off"
-        className={inputClass}
+        className="w-full"
       />
-      {f.hint && <span className="block text-[11px] text-fg-muted/80">{f.hint}</span>}
-    </label>
+    </Field>
   );
 
   return (
-    <div className="h-full overflow-y-auto">
-      <div className="mx-auto flex max-w-xl flex-col gap-6 p-8">
-        <div className="flex items-center justify-between">
-          <button type="button" onClick={() => router.history.back()} className="text-fg-muted hover:text-fg">
-            ← Back
-          </button>
-          <div className="flex items-center gap-3 text-xs">
-            <span className="text-fg-muted">{status}</span>
-            <button
-              type="button"
-              onClick={() => void save()}
-              disabled={!dirty}
-              className="rounded-md bg-accent px-3 py-1.5 text-white disabled:opacity-40"
-            >
-              Save
-            </button>
-          </div>
-        </div>
-        <h1 className="font-medium text-xl">Settings</h1>
+    <SettingsPage
+      onBack={() => router.history.back()}
+      actions={
+        <>
+          <span className="text-fg-muted text-xs">{status}</span>
+          <Button variant="primary" size="sm" onClick={() => void save()} disabled={!dirty}>
+            Save
+          </Button>
+        </>
+      }
+    >
+      <AppearancePanel />
 
-        <section className="space-y-3">
-          <h2 className="label">Cloudflare R2</h2>
-          <label className="block space-y-1">
-            <span className="text-fg-muted text-xs">Transport</span>
-            <select
-              value={values.R2_TRANSPORT ?? 's3'}
-              onChange={(e) => set('R2_TRANSPORT', e.target.value)}
-              className={inputClass}
-            >
-              <option value="s3">S3 API keys (fast, needed for prune and unpublish)</option>
-              <option value="wrangler">wrangler CLI login (slower, no keys needed)</option>
-            </select>
-          </label>
-          {R2_FIELDS.filter(
-            (f) => (values.R2_TRANSPORT ?? 's3') === 's3' || f.key === 'R2_BUCKET' || f.key === 'R2_PUBLIC_URL',
-          ).map(field)}
-          <button
-            type="button"
-            onClick={() => void run('doctor')}
-            disabled={busy}
-            className="rounded-md border border-line px-3 py-1.5 text-xs hover:border-accent disabled:opacity-40"
-          >
-            Test connection
-          </button>
-        </section>
+      <section className="space-y-3">
+        <h2 className="section-title">Cloudflare R2</h2>
+        <Field label="Transport">
+          <Select value={values.R2_TRANSPORT ?? 's3'} onChange={(e) => set('R2_TRANSPORT', e.target.value)}>
+            <option value="s3">S3 API keys (fast, needed for prune and unpublish)</option>
+            <option value="wrangler">wrangler CLI login (slower, no keys needed)</option>
+          </Select>
+        </Field>
+        {R2_FIELDS.filter(
+          (f) => (values.R2_TRANSPORT ?? 's3') === 's3' || f.key === 'R2_BUCKET' || f.key === 'R2_PUBLIC_URL',
+        ).map(field)}
+        <Button onClick={() => void run('doctor')} disabled={busy}>
+          Test connection
+        </Button>
+      </section>
 
-        <section className="space-y-3">
-          <h2 className="label">Site</h2>
-          {SITE_FIELDS.map(field)}
-          <button
-            type="button"
-            onClick={() => void run('password-sync')}
-            disabled={busy}
-            className="rounded-md border border-line px-3 py-1.5 text-xs hover:border-accent disabled:opacity-40"
-          >
-            Apply password to the site now
-          </button>
-          <p className="text-[11px] text-fg-muted">Every publish also applies it; this rewrites only site.json.</p>
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="label">Likes and downloads</h2>
-          {SOCIAL_FIELDS.map(field)}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => void testWorker()}
-              disabled={workerCheck === 'testing'}
-              className="rounded-md border border-line px-3 py-1.5 text-xs hover:border-accent disabled:opacity-40"
-            >
-              {workerCheck === 'testing' ? 'Testing…' : 'Test'}
-            </button>
-            {workerCheck && workerCheck !== 'testing' && (
-              <span
-                role="status"
-                className={`min-w-0 break-words text-xs ${workerCheck.ok ? 'text-emerald-400' : 'text-red-400'}`}
-              >
-                {workerCheck.message}
-              </span>
-            )}
-          </div>
-          <p className="text-[11px] text-fg-muted">
-            Test checks the Worker URL (GET /v1/health). The Downloads tab in the editor reads the log with the token.
-          </p>
-        </section>
-
-        <section className="space-y-3">
-          <h2 className="label">Download version</h2>
-          {IMAGE_FIELDS.map(field)}
-        </section>
-
-        {log.length > 0 && (
-          <pre className="max-h-48 overflow-auto rounded-md bg-panel-2 p-3 font-mono text-[11px] leading-relaxed">
-            {log.join('\n')}
-          </pre>
-        )}
+      <section className="space-y-3">
+        <h2 className="section-title">Site</h2>
+        {SITE_FIELDS.map(field)}
         <p className="text-[11px] text-fg-muted">
-          Setup steps for the bucket and the viewer are in docs/PUBLISHING.md.
+          Passwords are set per book, under Publish in the book's settings. A site-wide password from an earlier version
+          still guards the book list and books not republished since; remove it once every book that needs one has its
+          own.
         </p>
-      </div>
+        <Button onClick={() => void run('password-clear')} disabled={busy}>
+          Remove site-wide password
+        </Button>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="section-title">Likes and downloads</h2>
+        {SOCIAL_FIELDS.map(field)}
+        <div className="flex items-center gap-3">
+          <Button onClick={() => void testWorker()} disabled={workerCheck === 'testing'}>
+            {workerCheck === 'testing' ? 'Testing…' : 'Test'}
+          </Button>
+          {workerCheck && workerCheck !== 'testing' && (
+            <span role="status" className={`min-w-0 break-words text-xs ${workerCheck.ok ? 'text-ok' : 'text-danger'}`}>
+              {workerCheck.message}
+            </span>
+          )}
+        </div>
+        <p className="text-[11px] text-fg-muted">
+          Test checks the Worker URL (GET /v1/health). The Downloads tab in the editor reads the log with the token.
+        </p>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="section-title">Download version</h2>
+        {IMAGE_FIELDS.map(field)}
+      </section>
+
+      <AiPanel />
+
+      <ModelsPanel />
+
+      <ToolsPanel />
+
+      {log.length > 0 && (
+        <pre className="scrollbar max-h-48 overflow-auto rounded-md bg-panel-2 p-3 font-mono text-[11px] leading-relaxed">
+          {log.join('\n')}
+        </pre>
+      )}
+      <p className="text-[11px] text-fg-muted">Setup steps for the bucket and the viewer are in docs/PUBLISHING.md.</p>
+    </SettingsPage>
+  );
+}
+
+/**
+ * Plan 49: Settings' frame, the same bar as Home's (plan 50): 44 px, `panel-2` over a hairline, the window drags from
+ * anywhere in it but its controls, and the traffic lights sit in the 78 px inset. Back and the title on the left, the
+ * save status and Save on the right; the page scrolls under it (plan 43's floating 32 px strip is gone).
+ */
+function SettingsPage({ onBack, actions, children }: { onBack: () => void; actions?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="flex h-full flex-col bg-canvas">
+      <header
+        data-tauri-drag-region="deep"
+        className="flex h-11 shrink-0 items-center gap-3 border-hairline border-b bg-panel-2 pr-3 pl-[78px]"
+      >
+        <Button variant="ghost" size="sm" onClick={onBack}>
+          ← Back
+        </Button>
+        <h1 className="m-0 font-medium text-[13px] text-fg">Settings</h1>
+        <span className="ml-auto flex items-center gap-3">{actions}</span>
+      </header>
+      <main className="scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+        <div className="mx-auto flex max-w-xl flex-col gap-6 p-8">{children}</div>
+      </main>
     </div>
   );
 }

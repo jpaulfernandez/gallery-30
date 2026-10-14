@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BookTemplateSchema, PageSchema, ThemeSchema } from '../schema.js';
+import { AccessPasswordSchema, BookTemplateSchema, PageSchema, ThemeSchema } from '../schema.js';
 
 /**
  * `books/<slug>/manifest.json`: what the viewer fetches. Derived from the project file by the
@@ -33,9 +33,14 @@ export const ImageRecordSchema = z.object({
   webp: z.array(LadderEntrySchema),
   /** Tiny blurred WebP as a data URL. */
   placeholder: z.string().startsWith('data:'),
+  /**
+   * Alt text for screen readers (the asset's `alt`, plan 35), set on the photo's `<img>` by the viewer. Absent when the
+   * photo has none (and in manifests published before alt text), which renders as `alt=""`.
+   */
+  alt: z.string().optional(),
 });
 
-export const ManifestPageSchema = PageSchema.omit({ notes: true }).extend({
+export const ManifestPageSchema = PageSchema.omit({ notes: true, guides: true }).extend({
   /**
    * Jump-grid thumbnail: the rendered page (320 px wide) when page images were produced, else the
    * smallest browse size of the page's first photo, else null.
@@ -54,6 +59,11 @@ export const ManifestSchema = z
     slug: z.string().min(1),
     title: z.string(),
     listed: z.boolean(),
+    /**
+     * The book's soft password, or null for none. Absent only in manifests published before
+     * per-book passwords: the viewer then falls back to the legacy `site.password`.
+     */
+    password: AccessPasswordSchema.nullable().optional(),
     template: BookTemplateSchema,
     theme: ThemeSchema,
     publishedAt: z.iso.datetime({ offset: true }),

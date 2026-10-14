@@ -39,31 +39,24 @@ export async function unpublish(options: {
   return { deleted: keys.length, site };
 }
 
-/** Rewrite `site.json` alone with the configured password (step 2.4: a password change). */
-export async function syncPassword(options: {
+/**
+ * Remove the legacy site-wide password from `site.json` (passwords are per book now) and record the
+ * configured social API origin.
+ */
+export async function clearSitePassword(options: {
   store: ObjectStore;
   reporter: Reporter;
-  word: string;
-  expiresAt: string | null;
-  /** Remove the password entirely. */
-  clear?: boolean;
   /** Social API origin to record in `site.json`; empty keeps the current value. */
   apiUrl?: string;
 }): Promise<Site> {
-  const { nextPassword } = await import('./site.js');
   const site = await readSite(options.store);
-  const password = options.clear
-    ? null
-    : await nextPassword(site.password, { word: options.word, expiresAt: options.expiresAt });
   const api = options.apiUrl || site.api;
-  if (password === site.password && api === site.api) {
-    options.reporter.info('site.json password unchanged');
+  if (site.password === null && api === site.api) {
+    options.reporter.info('site.json has no site-wide password');
     return site;
   }
-  const next = { ...site, password, api };
+  const next = { ...site, password: null, api };
   await writeSite(options.store, next);
-  options.reporter.info(
-    password ? `site.json password set (version ${password.version})` : 'site.json password cleared',
-  );
+  options.reporter.info('site.json site-wide password removed');
   return next;
 }

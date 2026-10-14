@@ -2,6 +2,9 @@ import {
   BOOK_TEMPLATES,
   type Book,
   type BookTemplateName,
+  createPassword,
+  OUTPUT_PROFILE_LABELS,
+  type OutputProfile,
   PublishInfoSchema,
   randomToken,
   resolveTheme,
@@ -11,6 +14,8 @@ import {
 import { useEffect, useState } from 'react';
 import { useBookStore } from '../../store/book';
 import { type UiPrefs, useUiStore } from '../../store/ui';
+import { Button } from '../ui/Button';
+import { Switch } from '../ui/Field';
 import { useIdleGesture } from './gestures';
 import { Field, HEX, inputClass, Section, toHex6 } from './inspectorUi';
 
@@ -19,7 +24,7 @@ export const PAGE_WIDTH_PT = 576;
 
 /**
  * Book-wide settings (the inspector with nothing selected, above the Page sections): title,
- * template, the background new pages get, spacing tokens (stored in the theme, undoable), the
+ * template, the output colour of developed photos, the background new pages get, spacing tokens (stored in the theme, undoable), the
  * view prefs (grid, safe area, snapping; per machine, localStorage), and re-applying layouts after
  * a spacing change.
  */
@@ -34,7 +39,7 @@ export function BookSettings({ book }: { book: Book }) {
 
 const SLUG = PublishInfoSchema.shape.slug;
 
-/** Slug, listed or unlisted, and the last publish (step 2.7). */
+/** Slug, listed or unlisted, the optional password, and the last publish (step 2.7). */
 function PublishSection({ book }: { book: Book }) {
   const setPublish = useBookStore((s) => s.setPublish);
   const { slug, visibility, lastPublishedAt } = book.publish;
@@ -59,7 +64,7 @@ function PublishSection({ book }: { book: Book }) {
       <Field label="Link">
         <TextField key={slug} value={slug} onCommit={commitSlug} label="Book slug" mono />
       </Field>
-      {slugError && <p className="text-[11px] text-red-400">{slugError}</p>}
+      {slugError && <p className="text-[11px] text-danger">{slugError}</p>}
       <Field label="Visibility">
         <div className="flex rounded-md border border-line p-0.5 text-xs">
           {(['listed', 'unlisted'] as const).map((v) => (
@@ -81,14 +86,11 @@ function PublishSection({ book }: { book: Book }) {
             ? 'Appears on the site root. A plain slug reads best.'
             : 'Reached by link only; a random suffix keeps it unguessable.'}
         </p>
-        <button
-          type="button"
-          onClick={regenerate}
-          className="shrink-0 rounded-md border border-line px-2 py-1 text-xs hover:border-accent"
-        >
+        <Button size="sm" onClick={regenerate}>
           Regenerate
-        </button>
+        </Button>
       </div>
+      <PasswordFields book={book} />
       <Field label="Last published">
         <span className="text-fg text-xs tabular-nums">
           {lastPublishedAt ? new Date(lastPublishedAt).toLocaleString() : 'Never'}
@@ -96,6 +98,109 @@ function PublishSection({ book }: { book: Book }) {
       </Field>
     </Section>
   );
+}
+
+/**
+ * The book's own soft password: off, or on with a word. Only the salted hash is kept (in the project
+ * file and the manifest), so the word cannot be shown again; "Change" asks for a new one. A new word
+ * asks every device again, from the next publish.
+ */
+function PasswordFields({ book }: { book: Book }) {
+  const setPublish = useBookStore((s) => s.setPublish);
+  const { password } = book.publish;
+  const [editing, setEditing] = useState(false);
+  const [word, setWord] = useState('');
+  const on = password !== null || editing;
+
+  const toggle = () => {
+    if (on) {
+      setEditing(false);
+      setWord('');
+      if (password) setPublish({ password: null });
+    } else {
+      setEditing(true);
+    }
+  };
+  const save = async () => {
+    if (!word.trim()) return;
+    setPublish({ password: await createPassword(word, password) });
+    setEditing(false);
+    setWord('');
+  };
+  const expiry = password?.expiresAt ? toDateInput(password.expiresAt) : '';
+  const setExpiry = (value: string) => {
+    if (!password) return;
+    const expiresAt = value ? new Date(`${value}T00:00:00`).toISOString() : null;
+    if (expiresAt !== password.expiresAt) setPublish({ password: { ...password, expiresAt } });
+  };
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-fg-muted text-xs">Password</span>
+        <Switch hideLabel label="Require a password" checked={on} onChange={toggle} />
+      </div>
+      {editing ? (
+        <form
+          className="flex items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void save();
+          }}
+        >
+          <input
+            type="password"
+            value={word}
+            onChange={(e) => setWord(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.stopPropagation();
+                setEditing(false);
+                setWord('');
+              }
+            }}
+            placeholder={password ? 'New password' : 'Password'}
+            autoComplete="new-password"
+            // biome-ignore lint/a11y/noAutofocus: shown right after the switch or "Change" was pressed
+            autoFocus
+            aria-label="Book password"
+            className={`${inputClass} min-w-0 flex-1`}
+          />
+          <Button type="submit" size="sm" disabled={!word.trim()}>
+            Set
+          </Button>
+        </form>
+      ) : (
+        password && (
+          <>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[11px] text-fg-muted leading-relaxed">Set. Viewers type it once per device.</p>
+              <Button size="sm" onClick={() => setEditing(true)}>
+                Change
+              </Button>
+            </div>
+            <Field label="Ask again after">
+              <input
+                type="date"
+                value={expiry}
+                onChange={(e) => setExpiry(e.target.value)}
+                aria-label="Ask for the password again after this date (optional)"
+                className={`${inputClass} w-40 min-w-0`}
+              />
+            </Field>
+          </>
+        )
+      )}
+      {!on && <p className="text-[11px] text-fg-muted leading-relaxed">Off: anyone with the link can open the book.</p>}
+    </>
+  );
+}
+
+/** An ISO datetime as the local `YYYY-MM-DD` a date input shows. */
+function toDateInput(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
 function BookSection({ book }: { book: Book }) {
@@ -133,6 +238,7 @@ function BookSection({ book }: { book: Book }) {
         {templateLabel(book.template)}. Frames are fractions of the page, so photos and text stretch to a new shape; use
         "Apply margin & gutter" below to re-fit layout pages.
       </p>
+      <OutputColourField book={book} />
       <Field label="Page background">
         <ColorField
           value={theme.defaultPageBackground}
@@ -194,22 +300,51 @@ function BookSection({ book }: { book: Book }) {
         <PrefSwitch pref="snapEnabled" label="Snap to guides" hint="Hold Cmd while dragging to skip" />
       </div>
       <div className="space-y-1.5">
-        <button
-          type="button"
+        <Button
+          size="sm"
           onClick={() => {
             const n = reapplyLayouts();
             setApplied(n === 0 ? 'No layout pages to update' : `Updated ${n} ${n === 1 ? 'page' : 'pages'}`);
           }}
-          className="w-full rounded-md border border-line bg-panel-2 px-2.5 py-1.5 text-left text-xs hover:border-accent"
+          className="w-full"
         >
           Apply margin & gutter to all layout pages
-        </button>
+        </Button>
         <p className="text-[11px] text-fg-muted leading-relaxed" aria-live="polite">
           {applied ??
             'Moves the frames of every page that still follows a library layout. Blank pages and pages you edited by hand are left as they are.'}
         </p>
       </div>
     </Section>
+  );
+}
+
+/** The colour space edited photos are rendered and published in (`Book.outputProfile`, step D6.2). */
+function OutputColourField({ book }: { book: Book }) {
+  const setOutputProfile = useBookStore((s) => s.setOutputProfile);
+  return (
+    <>
+      <Field label="Output colour">
+        <select
+          aria-label="Output colour profile"
+          value={book.outputProfile}
+          onChange={(e) => setOutputProfile(e.target.value as OutputProfile)}
+          className={`${inputClass} w-40 min-w-0`}
+        >
+          {(Object.keys(OUTPUT_PROFILE_LABELS) as OutputProfile[]).map((p) => (
+            <option key={p} value={p}>
+              {OUTPUT_PROFILE_LABELS[p]}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <p className="text-[11px] text-fg-muted leading-relaxed">
+        {book.outputProfile === 'display-p3'
+          ? 'Display P3 keeps the richer colours of Apple displays and iPhone photos; the viewer shows them on P3 screens and browsers on sRGB screens convert.'
+          : 'sRGB is the web standard and looks the same everywhere. Display P3 keeps richer colours for Apple displays.'}{' '}
+        Applies to edited photos.
+      </p>
+    </>
   );
 }
 
@@ -362,24 +497,21 @@ export function ColorField({
 }
 
 /** A switch bound to a boolean UI pref. */
-function PrefSwitch({ pref, label, hint }: { pref: Exclude<keyof UiPrefs, 'leftTab'>; label: string; hint?: string }) {
+function PrefSwitch({
+  pref,
+  label,
+  hint,
+}: {
+  pref: Exclude<keyof UiPrefs, 'leftTab' | 'surround'>;
+  label: string;
+  hint?: string;
+}) {
   const on = useUiStore((s) => s[pref]);
   const setPref = useUiStore((s) => s.setPref);
   return (
     <div className="flex items-center justify-between gap-3" title={hint}>
       <span className="text-fg-muted text-xs">{label}</span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={on}
-        aria-label={label}
-        onClick={() => setPref(pref, !on)}
-        className={`relative h-4 w-7 shrink-0 rounded-full transition-colors ${on ? 'bg-accent' : 'bg-line'}`}
-      >
-        <span
-          className={`absolute top-0.5 left-0.5 size-3 rounded-full bg-white transition-transform ${on ? 'translate-x-3' : ''}`}
-        />
-      </button>
+      <Switch hideLabel label={label} checked={on} onChange={() => setPref(pref, !on)} />
     </div>
   );
 }

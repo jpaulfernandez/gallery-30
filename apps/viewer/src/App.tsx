@@ -14,8 +14,10 @@ type Loaded<T> = { status: 'loading' } | { status: 'error'; error: unknown } | {
 const LOADING: Loaded<never> = { status: 'loading' };
 
 /**
- * Boot: `site.json` (password + listed books), the access grant, then the book's manifest. Root with
- * one listed book redirects to it, with several shows the list, with none stays blank.
+ * Boot: `site.json` (listed books), then the book's manifest and its password. Root with one listed
+ * book redirects to it, with several shows the list, with none stays blank. A manifest published
+ * before per-book passwords has no `password` field and falls back to the legacy `site.password`,
+ * which also still gates the list.
  */
 export function App() {
   const route = useRoute();
@@ -26,10 +28,18 @@ export function App() {
   const slug = route.kind === 'book' ? route.slug : (onlyBook?.slug ?? null);
   const manifest = useManifest(slug, attempt);
 
+  const loaded = manifest.status === 'ready' ? manifest.value : null;
+  const sitePassword = site.status === 'ready' ? site.value.password : null;
+  // Whose password applies: the book's own (`bookId` set) or the legacy site-wide one.
+  const gate =
+    slug !== null && loaded && loaded.password !== undefined
+      ? { password: loaded.password, bookId: loaded.id }
+      : { password: sitePassword, bookId: null };
   // Granted this session (the stored grant is re-read on every render; it is cheap and always current).
-  const [grantedVersion, setGrantedVersion] = useState<number | null>(null);
-  const password = site.status === 'ready' ? site.value.password : null;
-  const granted = password === null || grantedVersion === password.version || grantIsValid(readGrant(), password);
+  const [grantedKey, setGrantedKey] = useState<string | null>(null);
+  const password = gate.password;
+  const gateKey = password ? `${gate.bookId ?? ''}:${password.version}` : null;
+  const granted = password === null || grantedKey === gateKey || grantIsValid(readGrant(gate.bookId), password);
 
   // Exactly one listed book: the root is that book.
   useEffect(() => {
@@ -52,13 +62,20 @@ export function App() {
   if (site.status === 'error')
     return <Retry message="Couldn’t load this site." onRetry={() => setAttempt((a) => a + 1)} />;
 
+  // A book's password is in its manifest: wait for it before deciding.
+  if (slug !== null && manifest.status === 'loading') return null;
+
   if (password && !granted) {
-    const cover =
-      (manifest.status === 'ready' && manifest.value?.pages[0]?.thumbnail) ||
-      books.find((b) => b.slug === slug)?.cover ||
-      books[0]?.cover ||
-      null;
-    return <PasswordGate password={password} cover={cover} onGranted={() => setGrantedVersion(password.version)} />;
+    const cover = loaded?.pages[0]?.thumbnail || books.find((b) => b.slug === slug)?.cover || books[0]?.cover || null;
+    return (
+      <PasswordGate
+        key={gateKey}
+        password={password}
+        bookId={gate.bookId}
+        cover={cover}
+        onGranted={() => setGrantedKey(gateKey)}
+      />
+    );
   }
 
   if (slug === null) return books.length > 1 ? <BookList books={books} /> : null;

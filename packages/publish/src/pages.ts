@@ -15,9 +15,9 @@ import {
 } from '@photobook/shared';
 import type { Browser, Page as BrowserPage } from 'playwright';
 import sharp from 'sharp';
-import type { FrozenBook } from './freeze.js';
+import { type FrozenBook, imageId, outName } from './freeze.js';
 import { hashText } from './hash.js';
-import { outDir } from './images.js';
+import { fitSize, outDir } from './images.js';
 import { mapLimit } from './limit.js';
 import type { Reporter } from './log.js';
 import type { ImageObject, ProcessedAsset } from './manifest.js';
@@ -83,7 +83,7 @@ export function pagesDir(projectPath: string, hash: string): string {
 }
 
 /**
- * The render hash of a page: renderer version, template, theme, the page without its notes and the
+ * The render hash of a page: renderer version, template, theme, the page without its notes and guides and the
  * content hash of every photo it shows. Ids of unchanged pages and photos keep their hash.
  */
 export function pageHash(
@@ -91,7 +91,7 @@ export function pageHash(
   page: Book['pages'][number],
   assetHash: (id: string) => string | undefined,
 ): string {
-  const { notes: _notes, ...rest } = page;
+  const { notes: _notes, guides: _guides, ...rest } = page;
   const assets: Record<string, string | null> = {};
   for (const id of pageAssetIds(rest)) assets[id] = assetHash(id) ?? null;
   return hashText(
@@ -189,10 +189,24 @@ export function rendererCss(): Promise<string> {
   return cssCache;
 }
 
-/** Best local version of a processed photo: the largest WebP of the ladder, else the share JPEG. */
-export function localImage({ asset, meta }: ProcessedAsset, projectPath: string) {
-  const dir = outDir(projectPath, asset.hash);
+/**
+ * Best local version of a processed photo: the largest WebP of the ladder, else the share JPEG. With `frame` (a social
+ * post's page size, workflow plan 14) the download JPEG (up to `DOWNLOAD_MAX_EDGE`, from the original or the develop
+ * render) is used instead when the ladder's top is smaller than the photo would need to cover a page that size and the
+ * download is larger: a 3:2 photo filling a 1080 x 1920 story needs 2880 px, not the 2048 px WebP upscaled.
+ */
+export function localImage({ asset, meta }: ProcessedAsset, projectPath: string, frame?: PageSize) {
+  const dir = outDir(projectPath, outName(asset));
   const top = meta.ladder.at(-1);
+  if (frame && top) {
+    const long = Math.max(meta.width, meta.height);
+    const needed = Math.max(frame.width, frame.height) * (long / Math.max(1, Math.min(meta.width, meta.height)));
+    const topLong = Math.max(top.width, top.height);
+    const download = fitSize(meta.width, meta.height, meta.download.maxEdge);
+    if (needed > topLong + 0.5 && Math.max(download.width, download.height) > topLong) {
+      return { path: join(dir, meta.download.file), width: download.width, height: download.height };
+    }
+  }
   return top
     ? { path: join(dir, `w${top.w}.webp`), width: top.width, height: top.height }
     : { path: join(dir, meta.share.file), width: meta.share.width, height: meta.share.height };
@@ -208,23 +222,45 @@ export async function pageHtml(
   processed: Map<string, ProcessedAsset>,
   projectPath: string,
 ): Promise<string> {
-  const { createElement, renderToStaticMarkup } = reactServer();
-  const resolve: ResolveImage = (id) => {
-    const p = processed.get(id);
-    if (!p) return null;
-    const img = localImage(p, projectPath);
-    return { src: pathToFileURL(img.path).href, width: img.width, height: img.height, loading: 'eager' };
-  };
   const widths = Object.fromEntries(FRAMES.map((f) => [f, fitPageWidth(book.template, PAGE_IMAGE_SIZES[f])])) as Record<
     Frame,
     number
   >;
+  return pageDocumentHtml(book, page, processed, projectPath, book.template, widths, 'feed');
+}
+
+/**
+ * The standalone page document behind `pageHtml`, for any page size: `template` is the page's size (the book's, or a
+ * social post's network size, workflow plan 14) and `widths` the page width in CSS px per body class, `initial` being
+ * the class the document opens with.
+ */
+export async function pageDocumentHtml(
+  book: Book,
+  page: Book['pages'][number],
+  processed: Map<string, ProcessedAsset>,
+  projectPath: string,
+  template: PageSize,
+  widths: Record<string, number>,
+  initial: string,
+  /**
+   * A social post frame: photos too small in the WebP ladder come from the download JPEG (`localImage`). `frameSize`
+   * (a slideshow, plan 16) is the pixel size the page is shown at, Ken Burns zoom included, when it is not `template`.
+   */
+  options: { forFrame?: boolean; frameSize?: PageSize } = {},
+): Promise<string> {
+  const { createElement, renderToStaticMarkup } = reactServer();
+  const resolve: ResolveImage = (id) => {
+    const p = processed.get(id);
+    if (!p) return null;
+    const img = localImage(p, projectPath, options.forFrame ? (options.frameSize ?? template) : undefined);
+    return { src: pathToFileURL(img.path).href, width: img.width, height: img.height, loading: 'eager' };
+  };
   const props: PageProps = {
     page,
-    template: book.template,
+    template,
     theme: book.theme,
     resolve,
-    pageWidthPx: widths.feed,
+    pageWidthPx: widths[initial] ?? 0,
     style: { width: 'var(--pb-page-w)', flex: 'none' },
   };
   const markup = renderToStaticMarkup(createElement(PageView, props));
@@ -232,9 +268,9 @@ export async function pageHtml(
   const harness = [
     `html,body{margin:0;padding:0;overflow:hidden;background:${bg}}`,
     `.pb-frame{width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:${bg}}`,
-    ...FRAMES.map((f) => `body.${f}{--pb-page-w:${widths[f]}px}`),
+    ...Object.entries(widths).map(([f, w]) => `body.${f}{--pb-page-w:${w}px}`),
   ].join('\n');
-  return `<!doctype html><html><head><meta charset="utf-8"><style>${await rendererCss()}\n${harness}</style></head><body class="feed"><div class="pb-frame">${markup}</div></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><style>${await rendererCss()}\n${harness}</style></head><body class="${initial}"><div class="pb-frame">${markup}</div></body></html>`;
 }
 
 // --- Browser ------------------------------------------------------------------------------------
@@ -252,7 +288,7 @@ const WAIT_READY = `(async () => {
   };
 })()`;
 
-async function waitReady(tab: BrowserPage, label: string): Promise<void> {
+export async function waitReady(tab: BrowserPage, label: string): Promise<void> {
   const { broken, fonts } = (await tab.evaluate(WAIT_READY)) as { broken: string[]; fonts: string[] };
   if (broken.length) throw new Error(`${label}: ${broken.length} photo(s) did not load: ${broken.join(', ')}`);
   if (fonts.length) throw new Error(`${label}: font(s) did not load: ${fonts.join(', ')}`);
@@ -340,7 +376,10 @@ export async function renderPages(
   const { book, projectPath } = frozen;
   const total = book.pages.length;
   const jobs = book.pages.map((page, index) => {
-    const hash = pageHash(book, page, (id) => frozen.assets.get(id)?.hash);
+    const hash = pageHash(book, page, (id) => {
+      const a = frozen.assets.get(id);
+      return a && imageId(a);
+    });
     return { page, index, hash, dir: pagesDir(projectPath, hash), label: `page ${index + 1}` };
   });
   const pages = new Map<string, RenderedPage>();

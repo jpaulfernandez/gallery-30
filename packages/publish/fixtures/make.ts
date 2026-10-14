@@ -7,10 +7,13 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { type Book, BookSchema, type Page, THEME_DEFAULTS } from '@photobook/shared';
+import { type Book, BookSchema, CURRENT_VERSION, type Page, THEME_DEFAULTS } from '@photobook/shared';
 import sharp from 'sharp';
 
 const dir = join(dirname(fileURLToPath(import.meta.url)), 'six');
+
+/** The book's one folder: the project file's own (a relative path is relative to the project file). */
+const FOLDER = '01FIXTUREFOLDER0000000000F1';
 
 /** Fixed ids so the manifest and keys are stable across regenerations. */
 const PHOTOS = [
@@ -82,6 +85,7 @@ async function main(): Promise<void> {
     const upright = meta.autoOrient;
     assets[p.id] = {
       path: p.name,
+      folder: FOLDER,
       hash: createHash('sha256').update(bytes).digest('hex'),
       width: upright.width,
       height: upright.height,
@@ -92,11 +96,11 @@ async function main(): Promise<void> {
   }
   const [a1, a2, a3, a4, a5, a6] = PHOTOS.map((p) => p.id) as [string, string, string, string, string, string];
   const book: Book = {
-    version: 3,
+    version: CURRENT_VERSION,
     id: '01FIXTUREBOOK00000000000001',
     title: 'Six photos',
-    // A placeholder rather than this machine's path: publish falls back to the project file's folder.
-    sourceFolder: '/fixtures/six',
+    // Relative, so the fixture publishes from wherever it is copied.
+    folders: { [FOLDER]: { path: '.' } },
     template: { name: 'phone-portrait', width: 1080, height: 1350 },
     theme: THEME_DEFAULTS,
     assets,
@@ -117,11 +121,13 @@ async function main(): Promise<void> {
           },
         ],
         notes: 'designer only, stripped by publish',
+        guides: [{ axis: 'x', value: 0.5 }],
       },
       {
         id: '01FIXTUREPAGE00000000000002',
         layout: 'custom',
         background: { asset: a5 },
+        guides: [],
         elements: [
           photo('01FIXTUREEL000000000000003', a2, { x: 0.08, y: 0.1, w: 0.4, h: 0.5 }),
           photo('01FIXTUREEL000000000000004', a3, { x: 0.52, y: 0.4, w: 0.4, h: 0.5 }),
@@ -131,14 +137,18 @@ async function main(): Promise<void> {
         id: '01FIXTUREPAGE00000000000003',
         layout: 'custom',
         background: '#111111',
+        guides: [],
         elements: [
           photo('01FIXTUREEL000000000000005', a4, { x: 0.08, y: 0.06, w: 0.84, h: 0.42 }),
           photo('01FIXTUREEL000000000000006', a6, { x: 0.3, y: 0.52, w: 0.4, h: 0.32 }, 1.5),
         ],
       },
     ],
-    publish: { slug: 'fixture-six', visibility: 'listed', lastPublishedAt: null, r2Prefix: 'fx6pre' },
+    publish: { slug: 'fixture-six', visibility: 'listed', lastPublishedAt: null, r2Prefix: 'fx6pre', password: null },
     customLayouts: [],
+    outputProfile: 'srgb',
+    outputs: [],
+    captions: {},
   };
   BookSchema.parse(book);
   await writeFile(join(dir, 'book.photobook.json'), `${JSON.stringify(book, null, 2)}\n`);

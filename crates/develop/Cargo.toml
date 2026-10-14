@@ -1,0 +1,100 @@
+[package]
+name = "photobook-develop"
+version = "0.1.0"
+description = "Photobook develop pipeline: settings, hashing, decode, colour core and the CPU render engine. No Tauri dependency."
+edition = "2021"
+# moxcms 0.9 needs 1.89 (rayon 1.12 needs 1.80); the editor crate still declares 1.77.2.
+rust-version = "1.89"
+publish = false
+
+[lib]
+name = "photobook_develop"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+# float_roundtrip: the default float parser can be off by one ulp (e.g. 123456789012345680000), which
+# would change the canonical JSON and the hash; the parity fixtures cover it.
+serde_json = { version = "1", features = ["float_roundtrip"] }
+sha2 = "0.10"
+hex = "0.4"
+# D1.2: decode, colour core and the CPU reference pipeline.
+rayon = "1.10"
+thiserror = "2"
+kamadak-exif = "0.6"
+# 5.x like the editor, so the workspace builds one copy.
+fast_image_resize = "5.1"
+# Static libjpeg-turbo built with cmake, as in the editor.
+turbojpeg = { version = "1.5", default-features = false, features = ["cmake", "require-simd"] }
+# PNG decode (8/16 bit, iCCP); also used by the tests to write fixtures.
+image = { version = "0.25", default-features = false, features = ["png"] }
+# Workflow plan 11: lossy WebP export through libwebp (built from its vendored C source with `cc`; BSD-3).
+webp = { version = "0.3", default-features = false }
+# Workflow plan 12: AVIF through rav1e (`ravif`, BSD-3; no `asm`, so no nasm), 16-bit TIFF (`tiff`, MIT; Deflate),
+# watermark text rasterised with `ab_glyph` (Apache-2.0) from the shared WOFF2 fonts unpacked by `wuff` (MIT).
+ravif = { version = "0.13", default-features = false, features = ["threading"] }
+tiff = { version = "0.11", default-features = false, features = ["deflate"] }
+ab_glyph = "0.2"
+wuff = "0.2"
+# Plan 38: the DCT perceptual hash of a photo's proxy (`stats::phash`; MIT / Apache-2.0, pure Rust: rustdct,
+# transpose, base64). No feature: the cull needs it whatever else is built.
+image_hasher = { version = "3.1", default-features = false }
+# ICC input profiles (JPEG APP2, PNG iCCP) to linear Rec.2020.
+moxcms = "0.9"
+# D2: homography DLT (SVD); D2.2/D2.3 reuse it for vanishing points and the Upright solve.
+nalgebra = { version = "0.35", default-features = false, features = ["std"] }
+# D3.2: the GPU path (wgpu compute shaders in WGSL; `gpu` module). Metal on Apple platforms, Vulkan/DX12 elsewhere.
+wgpu = { version = "30.0.1", default-features = false, features = ["std", "parking_lot", "wgsl"] }
+bytemuck = { version = "1.16", features = ["derive"] }
+pollster = "0.4"
+log = "0.4"
+# D6.3: Lightroom XMP import/export (`xmp` module). 0.42 is already in the lockfile through `plist`.
+quick-xml = "0.42"
+# D4.2: local inference (feature `ai`). `ort` links ONNX Runtime statically from pyke's prebuilt binaries
+# (fetched by its build script; `tls-rustls` is for that build-time download), with the CoreML EP on macOS.
+ort = { version = "=2.0.0-rc.13", optional = true, default-features = false, features = ["std", "ndarray", "half", "download-binaries", "tls-rustls", "coreml", "api-24"] }
+ndarray = { version = "0.17", optional = true }
+half = { version = "2", optional = true }
+# The model downloader: blocking client (callers run it on a worker thread), rustls, Range resume.
+reqwest = { version = "0.13", optional = true, default-features = false, features = ["blocking", "rustls", "http2"] }
+# The pinned model manifest (models.toml, compiled in).
+toml = { version = "0.8", optional = true, default-features = false, features = ["parse"] }
+# D6.1: camera RAW decoding (feature `raw`): about 870 models, demosaic to linear f32 (LGPL-2.1, see README).
+rawler = { version = "0.8", optional = true, default-features = false }
+
+[target.'cfg(target_vendor = "apple")'.dependencies]
+wgpu = { version = "30.0.1", default-features = false, features = ["metal"] }
+
+[target.'cfg(not(target_vendor = "apple"))'.dependencies]
+wgpu = { version = "30.0.1", default-features = false, features = ["vulkan", "dx12"] }
+
+# D2.3: macOS Vision's horizon request as the Auto level fallback for line-poor scenes (feature `vision-horizon`).
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = { version = "0.6", optional = true }
+objc2-foundation = { version = "0.3", optional = true, default-features = false, features = ["std", "NSArray", "NSData", "NSDictionary", "NSObject"] }
+objc2-vision = { version = "0.3.2", optional = true, default-features = false, features = ["std", "VNRequest", "VNDetectHorizonRequest", "VNObservation", "VNRequestHandler", "VNTypes", "objc2-core-foundation"] }
+# D6.2: HEIC/HEIF through ImageIO + CoreGraphics (feature `heic-imageio`), decoded at full bit depth into a
+# 16-bit float extended linear sRGB bitmap (`decode::heic`).
+objc2-core-foundation = { version = "0.3.2", optional = true, default-features = false, features = ["std", "CFData", "CFDictionary", "CFNumber", "CFString", "CFCGTypes", "CFArray"] }
+objc2-core-graphics = { version = "0.3.2", optional = true, default-features = false, features = ["std", "CGBitmapContext", "CGColorSpace", "CGContext", "CGImage", "CGDataProvider"] }
+objc2-image-io = { version = "0.3.2", optional = true, default-features = false, features = ["std", "CGImageSource", "CGImageProperties", "CGImageDestination", "objc2-core-graphics"] }
+
+[features]
+# Auto level falls back to Vision's horizon detector (macOS only; a no-op elsewhere).
+vision-horizon = ["dep:objc2", "dep:objc2-foundation", "dep:objc2-vision"]
+# D4.2: ONNX Runtime, the model registry and the downloader (`ai` module). On by default so the editor gets it;
+# `--no-default-features` builds the pipeline without any of it.
+ai = ["dep:ort", "dep:ndarray", "dep:half", "dep:reqwest", "dep:toml"]
+# D6.1: camera RAW input through `rawler` (`decode::raw`). Without it RAW files are `Error::Unsupported`.
+raw = ["dep:rawler"]
+# D6.2: HEIC/HEIF decoded through ImageIO on macOS (`decode::heic`). Without it (or elsewhere) HEIC is
+# `Error::Unsupported` and the editor falls back to `sips`.
+heic-imageio = ["dep:objc2-core-foundation", "dep:objc2-core-graphics", "dep:objc2-image-io"]
+# Workflow plan 26: the DRUNet σ-map denoise experiment (`ai::drunet`), fed the plan 23 noise profile. Off by default:
+# the model is not pinned in `models.toml` until our export is hosted.
+denoise-drunet = ["ai"]
+default = ["ai", "raw", "heic-imageio"]
+
+[dev-dependencies]
+tempfile = "3"
+# Only to check our DLT against `Projection::from_control_points` (same nalgebra 0.35).
+imageproc = { version = "0.27", default-features = false }

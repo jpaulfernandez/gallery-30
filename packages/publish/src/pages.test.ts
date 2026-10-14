@@ -25,8 +25,6 @@ const config: PublishConfig = {
     transport: 's3',
   },
   viewerUrl: '',
-  sitePassword: '',
-  sitePasswordExpiresAt: null,
   download: { maxEdge: 4096, quality: 88 },
   concurrency: 2,
   social: { apiUrl: '', adminToken: '' },

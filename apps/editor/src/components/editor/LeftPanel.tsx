@@ -2,19 +2,27 @@ import { useAssetsStore } from '../../store/assets';
 import { useBookStore } from '../../store/book';
 import { type UiPrefs, useUiStore } from '../../store/ui';
 import { Filmstrip } from '../filmstrip/Filmstrip';
+import { LibraryPanel } from '../filmstrip/LibraryPanel';
+import { openReview } from '../filmstrip/visible';
 import { LayoutsPanel } from '../layouts/LayoutsPanel';
 
-const TABS: Array<{ id: UiPrefs['leftTab']; label: string }> = [
-  { id: 'photos', label: 'Photos' },
-  { id: 'layouts', label: 'Layouts' },
+const TABS: Array<{ id: UiPrefs['leftTab']; label: string; title: string }> = [
+  { id: 'photos', label: 'Project', title: "The project's photos" },
+  { id: 'library', label: 'Library', title: 'Photos of the imported folders, to add to the project' },
+  { id: 'layouts', label: 'Layouts', title: 'Page layouts' },
 ];
 
-/** Left panel: Photos (the filmstrip) and Layouts tabs. The tab is a UI pref (localStorage). */
+/**
+ * Left panel of the Design stage: Project (the project's filmstrip), Library (any imported folder, to add photos to
+ * the project, workflow plan 05) and Layouts tabs. The tab is a UI pref (localStorage). Project also offers Cull (Review over the project's photos)
+ * (rate and flag the photos it shows) and Rescan.
+ */
 export function LeftPanel() {
   const tab = useUiStore((s) => s.leftTab);
   const setPref = useUiStore((s) => s.setPref);
   const folder = useBookStore((s) => s.folder);
   const scanning = useAssetsStore((s) => s.busy);
+  const hasPhotos = useAssetsStore((s) => Object.keys(s.files).length > 0);
 
   return (
     <section aria-label="Photos and layouts" className="flex min-h-0 flex-col border-line border-r bg-panel">
@@ -28,8 +36,9 @@ export function LeftPanel() {
               id={`left-tab-${t.id}`}
               aria-selected={tab === t.id}
               aria-controls={`left-panel-${t.id}`}
+              title={t.title}
               onClick={() => setPref('leftTab', t.id)}
-              className={`label rounded-md px-2 py-1 outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+              className={`section-title rounded-md px-2 py-1 outline-none focus-visible:ring-2 focus-visible:ring-accent ${
                 tab === t.id ? 'bg-line text-fg!' : 'hover:text-fg!'
               }`}
             >
@@ -38,15 +47,26 @@ export function LeftPanel() {
           ))}
         </div>
         {tab === 'photos' && (
-          <button
-            type="button"
-            onClick={() => folder && void useAssetsStore.getState().scan(folder, { force: true })}
-            disabled={!folder || scanning}
-            title="Scan the folder again for added, changed or removed photos"
-            className="rounded-md px-1.5 py-0.5 text-[11px] text-fg-muted outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
-          >
-            Rescan
-          </button>
+          <div className="flex gap-0.5">
+            <button
+              type="button"
+              onClick={() => openReview()}
+              disabled={!hasPhotos}
+              title="Cull the photos shown below one at a time: rate them with stars and flag picks and rejects (R)"
+              className="rounded-md px-1.5 py-0.5 text-[11px] text-fg-muted outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+            >
+              Cull
+            </button>
+            <button
+              type="button"
+              onClick={() => folder && void useAssetsStore.getState().scan(folder, { force: true })}
+              disabled={!folder || scanning}
+              title="Scan the folder again for added, changed or removed photos"
+              className="rounded-md px-1.5 py-0.5 text-[11px] text-fg-muted outline-none hover:text-fg focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50"
+            >
+              Rescan
+            </button>
+          </div>
         )}
       </header>
       <div
@@ -55,7 +75,7 @@ export function LeftPanel() {
         aria-labelledby={`left-tab-${tab}`}
         className="flex min-h-0 flex-1 flex-col"
       >
-        {tab === 'photos' ? <Filmstrip /> : <LayoutsPanel />}
+        {tab === 'photos' ? <Filmstrip /> : tab === 'library' ? <LibraryPanel /> : <LayoutsPanel />}
       </div>
     </section>
   );

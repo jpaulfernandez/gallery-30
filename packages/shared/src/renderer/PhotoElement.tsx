@@ -92,7 +92,7 @@ export function PhotoElement(props: PhotoElementProps) {
           sizes={image.sizes}
           width={image.width}
           height={image.height}
-          alt=""
+          alt={image.alt ?? ''}
           decoding="async"
           loading={image.loading}
           draggable={false}

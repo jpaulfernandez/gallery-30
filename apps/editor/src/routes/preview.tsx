@@ -8,6 +8,7 @@ import { Reader } from '../components/preview/Reader';
 import { makeResolver } from '../components/preview/resolve';
 import { useAssetsStore } from '../store/assets';
 import { useBookStore } from '../store/book';
+import { resolvedAssets } from '../store/library';
 
 type Mode = 'phone' | 'desktop';
 
@@ -20,19 +21,25 @@ export function PreviewRoute() {
   const files = useAssetsStore((s) => s.files);
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>('phone');
-  // 0-based. Seeded from `#/book/preview?page=N`; kept in state so a mode switch reopens on the same page.
+  // 0-based. Seeded from `#/project/<id>/preview?page=N`; kept in state so a mode switch reopens on the same page.
   const [index, setIndex] = useState(() => Math.max(0, (readPreviewPage() ?? 1) - 1));
 
-  const resolve = useMemo(() => makeResolver(book?.assets, files, 'proxy'), [book?.assets, files]);
-  const resolveThumb = useMemo(() => makeResolver(book?.assets, files, 'thumb'), [book?.assets, files]);
+  const assets = useBookStore(resolvedAssets);
+  const profile = book?.outputProfile ?? 'srgb';
+  const resolve = useMemo(() => makeResolver(assets, files, 'proxy', profile), [assets, files, profile]);
+  const resolveThumb = useMemo(() => makeResolver(assets, files, 'thumb', profile), [assets, files, profile]);
 
   const onIndexChange = useCallback((i: number) => {
     setIndex(i);
     writePreviewPage(i + 1);
   }, []);
-  const onExit = useCallback(() => void navigate({ to: '/book' }), [navigate]);
+  const projectId = useBookStore((s) => s.projectId);
+  const onExit = useCallback(
+    () => projectId && void navigate({ to: '/project/$id/design', params: { id: projectId } }),
+    [navigate, projectId],
+  );
 
-  if (!book) return null;
+  if (!book || !projectId) return null;
 
   const reader = (
     <Reader
@@ -48,14 +55,19 @@ export function PreviewRoute() {
 
   return (
     <div className="flex h-full flex-col bg-stage">
-      <header className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-4 px-4">
+      {/* Plan 43: the window drags from the bar; the traffic lights sit in the 78 px inset. */}
+      <header
+        data-tauri-drag-region="deep"
+        className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-4 pr-4 pl-[78px]"
+      >
         <div className="flex">
           <ModeToggle mode={mode} onChange={setMode} />
         </div>
         <h1 className="m-0 max-w-[40vw] truncate font-serif text-[15px] font-normal text-fg">{book.title}</h1>
         <div className="flex justify-end">
           <Link
-            to="/book"
+            to="/project/$id/design"
+            params={{ id: projectId }}
             className="rounded-md border border-line px-3 py-1.5 text-fg no-underline hover:bg-panel focus-visible:outline-2 focus-visible:outline-accent"
           >
             Back to editor
@@ -71,7 +83,7 @@ export function PreviewRoute() {
         <FitBox width={DESKTOP_WIDTH} height={DESKTOP_HEIGHT}>
           <div
             data-testid="desktop-frame"
-            className="flex overflow-hidden rounded-xl border border-line bg-black shadow-2xl"
+            className="flex overflow-hidden rounded-xl border border-line bg-stage shadow-2xl"
             style={{ width: DESKTOP_WIDTH, height: DESKTOP_HEIGHT }}
           >
             <div className="relative h-full min-w-0 flex-1">{reader}</div>

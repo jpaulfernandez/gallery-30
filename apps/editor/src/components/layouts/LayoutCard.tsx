@@ -39,7 +39,7 @@ const CardBody = forwardRef<HTMLButtonElement, CardBodyProps>(function CardBody(
       } ${className ?? ''}`}
     >
       <div
-        className={`w-full rounded-[2px] shadow-black/40 shadow-sm transition duration-150 group-hover:-translate-y-0.5 group-hover:shadow-black/60 group-hover:shadow-lg ${
+        className={`w-full rounded-[2px] shadow-raised transition duration-fast group-hover:-translate-y-0.5 group-hover:shadow-float ${
           current ? 'ring-2 ring-accent ring-offset-2 ring-offset-panel' : ''
         }`}
       >
@@ -119,7 +119,7 @@ export function BlankLayoutCard({
       onClick={onChoose}
       thumb={
         <LayoutThumb items={[]} template={template}>
-          <div className="absolute inset-[8%] rounded-[1px] border border-[#c9d0cc] border-dashed" />
+          <div className="absolute inset-[8%] rounded-[1px] border border-fg-2 border-dashed" />
         </LayoutThumb>
       }
     />

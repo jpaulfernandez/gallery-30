@@ -6,11 +6,12 @@ import {
   type Manifest,
   type ManifestPage,
   ManifestSchema,
+  normalizeAlt,
   pageAssetIds,
   pageImageKey,
   publicUrl,
 } from '@photobook/shared';
-import type { FrozenAsset } from './freeze.js';
+import { type FrozenAsset, imageId } from './freeze.js';
 import type { ImageMeta } from './images.js';
 import { CONTENT_TYPES } from './store.js';
 
@@ -32,13 +33,13 @@ export function imageObjects(book: Book, { asset, meta }: ProcessedAsset): Image
   const { slug, r2Prefix } = book.publish;
   const out: ImageObject[] = [
     {
-      key: imageKey(slug, r2Prefix, asset.hash, 'download', 'jpg'),
+      key: imageKey(slug, r2Prefix, imageId(asset), 'download', 'jpg'),
       file: meta.download.file,
       contentType: CONTENT_TYPES.jpg,
       bytes: meta.download.bytes,
     },
     {
-      key: imageKey(slug, r2Prefix, asset.hash, 'share', 'jpg'),
+      key: imageKey(slug, r2Prefix, imageId(asset), 'share', 'jpg'),
       file: meta.share.file,
       contentType: CONTENT_TYPES.jpg,
       bytes: meta.share.bytes,
@@ -46,13 +47,13 @@ export function imageObjects(book: Book, { asset, meta }: ProcessedAsset): Image
   ];
   for (const l of meta.ladder) {
     out.push({
-      key: imageKey(slug, r2Prefix, asset.hash, `w${l.w}`, 'avif'),
+      key: imageKey(slug, r2Prefix, imageId(asset), `w${l.w}`, 'avif'),
       file: `w${l.w}.avif`,
       contentType: CONTENT_TYPES.avif,
       bytes: l.avif,
     });
     out.push({
-      key: imageKey(slug, r2Prefix, asset.hash, `w${l.w}`, 'webp'),
+      key: imageKey(slug, r2Prefix, imageId(asset), `w${l.w}`, 'webp'),
       file: `w${l.w}.webp`,
       contentType: CONTENT_TYPES.webp,
       bytes: l.webp,
@@ -64,7 +65,7 @@ export function imageObjects(book: Book, { asset, meta }: ProcessedAsset): Image
 export function imageRecord(book: Book, base: string, { asset, meta }: ProcessedAsset): ImageRecord {
   const { slug, r2Prefix } = book.publish;
   const url = (variant: Parameters<typeof imageKey>[3], ext: Parameters<typeof imageKey>[4]) =>
-    publicUrl(base, imageKey(slug, r2Prefix, asset.hash, variant, ext));
+    publicUrl(base, imageKey(slug, r2Prefix, imageId(asset), variant, ext));
   return {
     width: meta.width,
     height: meta.height,
@@ -82,9 +83,10 @@ export function downloadName(filename: string): string {
 }
 
 /**
- * Step 2.4: the manifest. No notes, no local paths. A page with rendered images (`pageHashes`: page
+ * Step 2.4: the manifest. No notes, no guides, no local paths. A page with rendered images (`pageHashes`: page
  * id -> render hash) points its thumbnail and share PNGs at them; otherwise the thumbnail is the first
- * photo's smallest WebP and the share PNGs are null.
+ * photo's smallest WebP and the share PNGs are null. Each image record carries its asset's alt text when it has one
+ * (plan 35; the viewer sets it on the `<img>`); page renders do not depend on it.
  */
 export function buildManifest(
   book: Book,
@@ -95,8 +97,13 @@ export function buildManifest(
 ): Manifest {
   const { slug, r2Prefix } = book.publish;
   const images: Record<string, ImageRecord> = {};
-  for (const [id, p] of processed) images[id] = imageRecord(book, base, p);
-  const pages: ManifestPage[] = book.pages.map(({ notes: _notes, ...page }) => {
+  for (const [id, p] of processed) {
+    const record = imageRecord(book, base, p);
+    const alt = normalizeAlt(book.assets[id]?.alt);
+    if (alt) record.alt = alt;
+    images[id] = record;
+  }
+  const pages: ManifestPage[] = book.pages.map(({ notes: _notes, guides: _guides, ...page }) => {
     const hash = pageHashes.get(page.id);
     if (hash) {
       return {
@@ -116,6 +123,7 @@ export function buildManifest(
     slug,
     title: book.title,
     listed: book.publish.visibility === 'listed',
+    password: book.publish.password,
     template: book.template,
     theme: book.theme,
     publishedAt,

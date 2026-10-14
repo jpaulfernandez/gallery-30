@@ -3,6 +3,7 @@ import { Link } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useBookLookup } from '../components/downloads/lookup';
 import { ActivityList, Card, LikesList, PageCounts, PhotoGrid, TopPhotoList } from '../components/downloads/sections';
+import { Button, buttonClass } from '../components/ui/Button';
 import { likeGroups, newestFirst, pageStats, photoStats, summarize, topPhotos } from '../lib/activity';
 import { errorMessage } from '../lib/errors';
 import { devError, devLog } from '../lib/log';
@@ -24,6 +25,7 @@ type State =
  */
 export function DownloadsRoute() {
   const book = useBookStore((s) => s.book);
+  const projectId = useBookStore((s) => s.projectId);
   const [state, setState] = useState<State>({ status: 'loading' });
   const run = useRef(0);
 
@@ -66,21 +68,20 @@ export function DownloadsRoute() {
     };
   }, [load]);
 
-  if (!book) return null;
+  if (!book || !projectId) return null;
   const refreshing = state.status === 'loading';
 
   return (
     <div className="flex h-full flex-col bg-stage">
-      <header className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-4 px-4">
+      {/* Plan 43: the window drags from the bar; the traffic lights sit in the 78 px inset. */}
+      <header
+        data-tauri-drag-region="deep"
+        className="grid h-12 shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-4 pr-4 pl-[78px]"
+      >
         <div className="flex items-center gap-3 text-xs">
-          <button
-            type="button"
-            onClick={() => void load()}
-            disabled={refreshing}
-            className="rounded-md border border-line px-3 py-1.5 text-fg hover:bg-panel disabled:opacity-50"
-          >
+          <Button size="sm" onClick={() => void load()} disabled={refreshing}>
             {refreshing ? 'Refreshing…' : 'Refresh'}
-          </button>
+          </Button>
           {state.status === 'ready' && (
             <span className="text-fg-muted">Updated {new Date(state.at).toLocaleTimeString()}</span>
           )}
@@ -90,7 +91,8 @@ export function DownloadsRoute() {
         </h1>
         <div className="flex justify-end">
           <Link
-            to="/book"
+            to="/project/$id/design"
+            params={{ id: projectId }}
             className="rounded-md border border-line px-3 py-1.5 text-fg no-underline hover:bg-panel focus-visible:outline-2 focus-visible:outline-accent"
           >
             Back to editor
@@ -98,26 +100,17 @@ export function DownloadsRoute() {
         </div>
       </header>
 
-      <main className="min-h-0 flex-1 overflow-y-auto px-6 pb-10">
+      <main className="min-h-0 flex-1 scrollbar overflow-x-hidden overflow-y-auto px-6 pb-10">
         <div className="mx-auto max-w-6xl">
           {state.status === 'loading' && <p className="text-fg-muted">Loading activity…</p>}
           {state.status === 'unconfigured' && <SetupHelp missing={state.missing} />}
           {state.status === 'error' && (
-            <div role="alert" className="max-w-xl rounded-lg border border-red-400/40 bg-panel p-4">
-              <p className="m-0 text-red-400">Could not load the activity.</p>
+            <div role="alert" className="max-w-xl rounded-lg border border-danger/40 bg-panel p-4">
+              <p className="m-0 text-danger">Could not load the activity.</p>
               <p className="mt-1 mb-3 whitespace-pre-wrap text-fg-muted text-xs">{state.message}</p>
               <div className="flex gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => void load()}
-                  className="rounded-md border border-line px-3 py-1.5 hover:border-accent"
-                >
-                  Try again
-                </button>
-                <Link
-                  to="/settings"
-                  className="rounded-md border border-line px-3 py-1.5 text-fg no-underline hover:border-accent"
-                >
+                <Button onClick={() => void load()}>Try again</Button>
+                <Link to="/settings" className={`${buttonClass()} no-underline`}>
                   Open Settings
                 </Link>
               </div>
@@ -151,7 +144,7 @@ function SetupHelp({ missing }: { missing: string[] }) {
       <p className="mb-3 text-fg-muted text-xs">Missing in Settings: {missing.join(', ')}.</p>
       <Link
         to="/settings"
-        className="rounded-md bg-accent px-3 py-1.5 text-white text-xs no-underline hover:brightness-110"
+        className="rounded-md bg-accent px-3 py-1.5 text-accent-ink text-xs no-underline hover:brightness-110"
       >
         Open Settings
       </Link>
@@ -163,7 +156,7 @@ function Stat({ value, label }: { value: number; label: string }) {
   return (
     <div className="rounded-lg border border-line bg-panel px-4 py-3">
       <div className="font-medium text-xl tabular-nums">{value}</div>
-      <div className="label">{label}</div>
+      <div className="section-title">{label}</div>
     </div>
   );
 }
@@ -193,7 +186,7 @@ function Activity({ data, now }: { data: ActivityResponse; now: number }) {
         <Stat value={summary.likes} label="Likes" />
       </div>
       {data.truncated && (
-        <p className="m-0 text-amber-300 text-xs">
+        <p className="m-0 text-warn text-xs">
           The log holds more events than the Worker returns; the counts cover the newest {data.events.length}.
         </p>
       )}

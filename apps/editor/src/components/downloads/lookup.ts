@@ -1,7 +1,7 @@
 import type { Book } from '@photobook/shared';
 import { useMemo } from 'react';
 import { basename } from '../../lib/path';
-import { useAssetsStore } from '../../store/assets';
+import { fileOfAsset, useAssetsStore } from '../../store/assets';
 
 /** What the Downloads tab knows about an id from the Worker, from the open book and the assets store. */
 export interface BookLookup {
@@ -19,7 +19,7 @@ export interface BookLookup {
 
 export function makeLookup(
   book: Pick<Book, 'assets' | 'pages'>,
-  files: Record<string, { thumbUrl?: string }>,
+  files: Record<string, { assetId: string; thumbUrl?: string }>,
 ): BookLookup {
   const pageIndex = new Map(book.pages.map((p, i) => [p.id, i]));
   const firstUse = new Map<string, number>();
@@ -36,7 +36,7 @@ export function makeLookup(
     },
     thumbUrl: (id) => {
       const asset = book.assets[id];
-      return (asset && files[asset.path]?.thumbUrl) || null;
+      return (asset && fileOfAsset(files, id)?.thumbUrl) || null;
     },
     pageNumber: (id) => {
       const i = pageIndex.get(id);

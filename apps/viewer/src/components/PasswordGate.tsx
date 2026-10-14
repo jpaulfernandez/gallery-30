@@ -1,17 +1,20 @@
-import { type SitePassword, verifyPassword } from '@photobook/shared';
+import { type AccessPassword, verifyPassword } from '@photobook/shared';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { writeGrant } from '../storage';
 
 /**
- * The soft site password over the blurred cover. A correct word stores `{ version, grantedAt }` in
- * local storage (see `grantIsValid`) and the device is not asked again until the word changes.
+ * A book's soft password over its blurred cover. A correct word stores `{ version, grantedAt }` in
+ * local storage under the book id (see `grantIsValid`) and the device is not asked again until the
+ * word changes. `bookId` null is the legacy site-wide password.
  */
 export function PasswordGate({
   password,
+  bookId,
   cover,
   onGranted,
 }: {
-  password: SitePassword;
+  password: AccessPassword;
+  bookId: string | null;
   cover: string | null;
   onGranted: () => void;
 }) {
@@ -31,7 +34,7 @@ export function PasswordGate({
     const ok = await verifyPassword(word, password);
     setChecking(false);
     if (ok) {
-      writeGrant({ version: password.version, grantedAt: new Date().toISOString() });
+      writeGrant(bookId, { version: password.version, grantedAt: new Date().toISOString() });
       onGranted();
     } else {
       setWrong(true);

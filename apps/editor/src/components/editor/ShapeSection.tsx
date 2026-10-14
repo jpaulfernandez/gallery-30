@@ -1,6 +1,9 @@
 import { type PhotoElement, SHAPE_KINDS, type Shape, type ShapeKind, shapeClip } from '@photobook/shared';
 import type { ReactNode } from 'react';
 import { useBookStore } from '../../store/book';
+import { Button } from '../ui/Button';
+import { Switch as UiSwitch } from '../ui/Field';
+import { Tooltip } from '../ui/Tooltip';
 import { usePointerGesture } from './gestures';
 import { Field, Section } from './inspectorUi';
 
@@ -121,20 +124,7 @@ function Stepper(props: { label: string; min: number; max: number; value: number
 function Switch({ label, checked, onChange }: { label: string; checked: boolean; onChange: (on: boolean) => void }) {
   return (
     <Field label={label}>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        onClick={() => onChange(!checked)}
-        className={`relative h-4 w-7 rounded-full transition-colors ${checked ? 'bg-accent' : 'bg-line'}`}
-      >
-        <span
-          className={`absolute top-0.5 left-0.5 size-3 rounded-full bg-white transition-transform ${
-            checked ? 'translate-x-3' : ''
-          }`}
-        />
-      </button>
+      <UiSwitch hideLabel label={label} checked={checked} onChange={onChange} />
     </Field>
   );
 }
@@ -152,21 +142,21 @@ export function ShapeSection({ pageId, element }: { pageId: string; element: Pho
         {SHAPE_KINDS.map((kind) => {
           const active = shape.kind === kind;
           return (
-            // biome-ignore lint/a11y/useSemanticElements: a segmented control, styled as buttons
-            <button
-              key={kind}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              aria-label={LABELS[kind]}
-              title={LABELS[kind]}
-              onClick={() => {
-                if (!active) apply(shapeFor(kind, randomSeed()));
-              }}
-              className={`rounded py-1 ${active ? 'bg-line text-fg' : 'text-fg-muted hover:text-fg'}`}
-            >
-              <ShapeIcon kind={kind} />
-            </button>
+            <Tooltip key={kind} label={LABELS[kind]} className="flex [&>*]:flex-1">
+              {/* biome-ignore lint/a11y/useSemanticElements: a segmented control, styled as buttons */}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={active}
+                aria-label={LABELS[kind]}
+                onClick={() => {
+                  if (!active) apply(shapeFor(kind, randomSeed()));
+                }}
+                className={`rounded py-1 ${active ? 'bg-line text-fg' : 'text-fg-muted hover:text-fg'}`}
+              >
+                <ShapeIcon kind={kind} />
+              </button>
+            </Tooltip>
           );
         })}
       </div>
@@ -236,13 +226,9 @@ export function ShapeSection({ pageId, element }: { pageId: string; element: Pho
             onChange={(v) => apply({ ...shape, roughness: v / 100 })}
           />
           <Field label="Variation">
-            <button
-              type="button"
-              onClick={() => apply({ ...shape, seed: randomSeed() })}
-              className="rounded-md border border-line bg-panel-2 px-2 py-1 text-xs hover:border-accent"
-            >
+            <Button size="sm" onClick={() => apply({ ...shape, seed: randomSeed() })}>
               Shuffle
-            </button>
+            </Button>
           </Field>
         </>
       )}

@@ -10,7 +10,8 @@ import { cx } from './util.js';
 export type Page = PageData;
 
 export interface PageProps extends Omit<EditableProps, 'selected'> {
-  page: PageData;
+  /** The page to draw (guides and notes are editor-only, so a published manifest page without them is fine). */
+  page: Omit<PageData, 'guides' | 'notes'>;
   template: PageSize;
   theme: Theme;
   resolve: ResolveImage;

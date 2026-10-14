@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { BOOK_TEMPLATES } from '../templates.js';
 import { THEME_DEFAULTS } from '../theme.js';
-import { inchFraction, snapCandidates, snapFrame, snapGap, snapToTrim } from './snap.js';
+import {
+  equalSpacingCandidates,
+  inchFraction,
+  pageGuideLines,
+  sizeMatchCandidates,
+  snapCandidates,
+  snapFrame,
+  snapGap,
+  snapToTrim,
+} from './snap.js';
 
 // 8 x 10 in reference page: 1 in = 0.125 of the width = 0.1 of the height.
 const page = BOOK_TEMPLATES['phone-portrait'];
@@ -173,5 +182,172 @@ describe('snapFrame', () => {
   it('leaves the frame alone when nothing is within the threshold', () => {
     const f = { x: 0.3007, y: 0.4003, w: 0.1, h: 0.1 };
     expect(snapFrame(f, [], { ...theme, grid: 0.5 }, page, { threshold: 0.0001 })).toEqual({ frame: f, guides: [] });
+  });
+});
+
+describe('equal spacing (workflow plan 30)', () => {
+  const noGrid = { ...theme, grid: 0.5 };
+  const left = { x: 0.08, y: 0.3, w: 0.2, h: 0.3 };
+  const right = { x: 0.62, y: 0.3, w: 0.3, h: 0.3 };
+
+  it('offers the centred spot between two neighbours, and spots beside a pair at their gap', () => {
+    const frame = { x: 0.3, y: 0.32, w: 0.2, h: 0.2 };
+    const { x, y } = equalSpacingCandidates(frame, [left, right]);
+    const values = x.map((l) => +l.value.toFixed(6)).sort((p, q) => p - q);
+    // Between: room 0.34 - 0.2 = 0.14, so the near edge at 0.28 + 0.07. After: 0.92 + 0.34. Before: 0.08 - 0.34 - 0.2.
+    expect(values).toEqual([-0.46, 0.35, 1.26]);
+    expect(x.every((l) => l.kind === 'equal' && l.side === 'after')).toBe(true);
+    // The neighbours share no column with the frame along y.
+    expect(y).toEqual([]);
+    // Two frames are not enough.
+    expect(equalSpacingCandidates(frame, [left]).x).toEqual([]);
+  });
+
+  it('snaps the middle of three frames to equal gaps and reports both spans', () => {
+    const { frame, guides } = snapFrame({ x: 0.356, y: 0.33, w: 0.2, h: 0.2 }, [left, right], noGrid, page, {
+      threshold: 0.01,
+    });
+    expect(frame.x).toBeCloseTo(0.35, 12);
+    const equal = guides.find((g) => g.kind === 'equal');
+    expect(equal?.label).toBe('equal');
+    expect(equal?.axis).toBe('x');
+    const spans = equal?.spans ?? [];
+    expect(spans).toHaveLength(2);
+    expect((spans[0]?.to ?? 0) - (spans[0]?.from ?? 0)).toBeCloseTo(0.07, 12);
+    expect((spans[1]?.to ?? 0) - (spans[1]?.from ?? 0)).toBeCloseTo(0.07, 12);
+    // At the middle of the shared band (0.33 to 0.53 with 0.3 to 0.6).
+    expect(spans[0]?.at).toBeCloseTo(0.43, 12);
+  });
+
+  it('snaps a third frame after a pair at the pair gap', () => {
+    const a = { x: 0.08, y: 0.3, w: 0.2, h: 0.3 };
+    const b = { x: 0.34, y: 0.3, w: 0.2, h: 0.3 };
+    const { frame, guides } = snapFrame({ x: 0.603, y: 0.3, w: 0.2, h: 0.3 }, [a, b], noGrid, page, {
+      threshold: 0.01,
+    });
+    expect(frame.x).toBeCloseTo(0.6, 12);
+    expect(guides.some((g) => g.kind === 'equal')).toBe(true);
+  });
+});
+
+describe('size match (workflow plan 30)', () => {
+  const noGrid = { ...theme, grid: 0.5 };
+  const other = { x: 0.6, y: 0.1, w: 0.25, h: 0.15 };
+
+  it('offers the dragged edge positions that match a neighbour, on resize only', () => {
+    const frame = { x: 0.1, y: 0.4, w: 0.2, h: 0.2 };
+    expect(sizeMatchCandidates(frame, [other], 'e').x.map((l) => l.value)).toEqual([0.35]);
+    expect(sizeMatchCandidates(frame, [other], 'w').x.map((l) => +l.value.toFixed(9))).toEqual([0.05]);
+    expect(sizeMatchCandidates(frame, [other], 's').y.map((l) => +l.value.toFixed(9))).toEqual([0.55]);
+    expect(sizeMatchCandidates(frame, [other], 'e').y).toEqual([]);
+    expect(sizeMatchCandidates(frame, [other], 'move')).toEqual({ x: [], y: [] });
+  });
+
+  it('snaps a resize to the same width and labels it', () => {
+    const { frame, guides } = snapFrame({ x: 0.1, y: 0.4, w: 0.246, h: 0.2 }, [other], noGrid, page, {
+      threshold: 0.01,
+      handle: 'e',
+    });
+    expect(frame.w).toBeCloseTo(0.25, 12);
+    const size = guides.find((g) => g.kind === 'size');
+    expect(size?.label).toBe('same width');
+    expect(size?.spans).toEqual([
+      { from: 0.1, to: expect.closeTo(0.35, 12), at: 0.4 },
+      { from: 0.6, to: 0.85, at: 0.1 },
+    ]);
+    const tall = snapFrame({ x: 0.1, y: 0.4, w: 0.2, h: 0.147 }, [other], noGrid, page, {
+      threshold: 0.01,
+      handle: 's',
+    });
+    expect(tall.frame.h).toBeCloseTo(0.15, 12);
+    expect(tall.guides.find((g) => g.kind === 'size')?.label).toBe('same height');
+  });
+
+  it('a move never takes a size line', () => {
+    const { guides } = snapFrame({ x: 0.1, y: 0.4, w: 0.246, h: 0.2 }, [other], noGrid, page, { threshold: 0.01 });
+    expect(guides.some((g) => g.kind === 'size')).toBe(false);
+  });
+});
+
+describe('extra lines', () => {
+  it('snaps to lines passed in by the caller', () => {
+    const extra = { value: 0.333, kind: 'frame' as const, strength: 5 };
+    const { frame } = snapFrame({ x: 0.33, y: 0.4, w: 0.2, h: 0.2 }, [], theme, page, {
+      threshold: 0.01,
+      extraLines: { x: [extra] },
+    });
+    expect(frame.x).toBeCloseTo(0.333, 12);
+  });
+});
+
+describe('smart guide options and merging (workflow plan 30)', () => {
+  const noGrid = { ...theme, grid: 0.5 };
+
+  it('sizeMatch: false leaves size lines out of a resize', () => {
+    const other = { x: 0.6, y: 0.1, w: 0.25, h: 0.15 };
+    const { frame, guides } = snapFrame({ x: 0.1, y: 0.4, w: 0.246, h: 0.2 }, [other], noGrid, page, {
+      threshold: 0.01,
+      handle: 'e',
+      sizeMatch: false,
+    });
+    expect(frame.w).toBe(0.246);
+    expect(guides.some((g) => g.kind === 'size')).toBe(false);
+  });
+
+  it('merges the spans of two equal-spacing lines at one position into one guide', () => {
+    // A [0, 0.1], B [0.15, 0.25], C [0.55, 0.65]: a 0.2 wide frame at 0.3 is both centred between B and C
+    // and after the pair A B at their 0.05 gap.
+    const a = { x: 0, y: 0.3, w: 0.1, h: 0.2 };
+    const b = { x: 0.15, y: 0.3, w: 0.1, h: 0.2 };
+    const c = { x: 0.55, y: 0.3, w: 0.1, h: 0.2 };
+    const { frame, guides } = snapFrame({ x: 0.303, y: 0.3, w: 0.2, h: 0.2 }, [a, b, c], noGrid, page, {
+      threshold: 0.01,
+    });
+    expect(frame.x).toBeCloseTo(0.3, 12);
+    const equal = guides.filter((g) => g.kind === 'equal');
+    expect(equal).toHaveLength(1);
+    // A-B, B-frame and frame-C, each once.
+    expect(equal[0]?.spans).toHaveLength(3);
+  });
+});
+
+describe('page guides (workflow plan 31)', () => {
+  const noGrid = { ...theme, grid: 0.5 };
+
+  it('turns page guides into strong `guide` lines on their axis', () => {
+    const lines = pageGuideLines([
+      { axis: 'x', value: 0.3 },
+      { axis: 'y', value: 0.45 },
+      { axis: 'x', value: Number.NaN },
+    ]);
+    expect(lines.x).toEqual([{ value: 0.3, kind: 'guide', strength: 4 }]);
+    expect(lines.y).toEqual([{ value: 0.45, kind: 'guide', strength: 4 }]);
+  });
+
+  it('snaps a moved frame to a page guide, labelled "guide"', () => {
+    const extraLines = pageGuideLines([
+      { axis: 'x', value: 0.3 },
+      { axis: 'y', value: 0.45 },
+    ]);
+    const { frame, guides } = snapFrame({ x: 0.305, y: 0.2, w: 0.2, h: 0.243 }, [], noGrid, page, {
+      threshold: 0.01,
+      extraLines,
+    });
+    expect(frame.x).toBeCloseTo(0.3, 12);
+    // The bottom edge (0.443) is within reach of the y guide.
+    expect(frame.y + frame.h).toBeCloseTo(0.45, 12);
+    expect(guides).toContainEqual({ axis: 'x', value: 0.3, kind: 'guide', label: 'guide' });
+    expect(guides).toContainEqual({ axis: 'y', value: 0.45, kind: 'guide', label: 'guide' });
+  });
+
+  it('snaps a dragged edge to a page guide on a resize, and beats another frame nearer by', () => {
+    const other = { x: 0.6, y: 0.7, w: 0.2, h: 0.1 };
+    const { frame } = snapFrame({ x: 0.1, y: 0.1, w: 0.495, h: 0.2 }, [other], noGrid, page, {
+      threshold: 0.01,
+      handle: 'e',
+      extraLines: pageGuideLines([{ axis: 'x', value: 0.592 }]),
+    });
+    // The guide (strength 4) wins over the frame's left edge at 0.6 (strength 3), though that is as near.
+    expect(frame.x + frame.w).toBeCloseTo(0.592, 12);
   });
 });

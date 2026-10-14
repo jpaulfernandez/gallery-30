@@ -1,9 +1,10 @@
-import type { Asset, Book } from '@photobook/shared';
+import { type Asset, type Book, usedAssetIdsOf } from '@photobook/shared';
 
 /**
- * Pure matcher for assets whose file moved or was renamed: given the book's assets and the files a
- * scan found, decide which assets relink to which scanned file, which are missing, which are
- * dropped, and which scanned files are new. No I/O; hashing comes in through `hashMany`.
+ * Pure matchers for assets whose file moved or was renamed. `planRelinks`: given one folder's assets and the files a
+ * scan of it found, decide which assets relink to which scanned file, which are missing, which are dropped, and which
+ * scanned files are new. `planCrossFolderRelinks` (workflow plan 04): search the assets still missing across the scans
+ * of every imported folder, by size then hash. No I/O; hashing comes in through `hashMany` / `hashIn`.
  */
 
 export interface ScannedLike {
@@ -19,8 +20,10 @@ export interface Relink {
 
 export interface MissingAsset {
   assetId: string;
-  /** Where the book last saw the file (relative to the source folder). */
+  /** Where the book last saw the file (relative to its folder). */
   path: string;
+  /** Absolute path of that folder when it is not the open project's primary folder. */
+  folder?: string;
   hash?: string;
   size?: number;
 }
@@ -44,14 +47,9 @@ function basename(path: string): string {
   return path.split('/').pop() ?? path;
 }
 
-/** Ids of the assets a page uses, as a photo element or as the page background. */
-export function referencedAssetIds(book: Pick<Book, 'pages'>): Set<string> {
-  const ids = new Set<string>();
-  for (const page of book.pages) {
-    if (typeof page.background === 'object') ids.add(page.background.asset);
-    for (const el of page.elements) if (el.type === 'photo' && el.asset !== null) ids.add(el.asset);
-  }
-  return ids;
+/** Ids of the assets a page uses, as a photo element or as the page background: the book's pages and outputs' frames. */
+export function referencedAssetIds(book: Pick<Book, 'pages'> & Partial<Pick<Book, 'outputs'>>): Set<string> {
+  return usedAssetIdsOf({ pages: book.pages, outputs: book.outputs ?? [] });
 }
 
 /**
@@ -135,4 +133,79 @@ export function relativeInside(folder: string, picked: string): string | null {
   if (!file.startsWith(`${root}/`)) return null;
   const rel = file.slice(root.length + 1);
   return rel === '' || rel.split('/').includes('..') ? null : rel;
+}
+
+/** One imported folder for `planCrossFolderRelinks`: its scan and the paths in it that assets already own. */
+export interface FolderScan {
+  /** Registry id. */
+  id: string;
+  path: string;
+  scanned: ScannedLike[];
+  claimed: ReadonlySet<string>;
+}
+
+/** An asset found in another place: `folderPath` / `to`, from `fromFolder` / `from`. */
+export interface CrossRelink {
+  assetId: string;
+  fromFolder: string | undefined;
+  from: string;
+  folderId: string;
+  folderPath: string;
+  to: string;
+}
+
+/** SHA-256 hex per relPath inside `folderPath`; unreadable files are absent or null. */
+export type HashIn = (folderPath: string, relPaths: string[]) => Promise<Map<string, string | null>>;
+
+/**
+ * Search `missing` assets (those with a recorded hash and size) across `folders`, in order: in each folder the files
+ * nobody claims with a wanted size are hashed (one `hashIn` call per folder, only while something is still unmatched),
+ * and an asset takes the first file with its hash (same file name preferred). Each file relinks at most one asset.
+ * Returns the relinks (with the hashes computed, by folder path and relPath, for reuse) and the assets still missing.
+ */
+export async function planCrossFolderRelinks(
+  missing: MissingAsset[],
+  folders: FolderScan[],
+  hashIn: HashIn,
+): Promise<{ relinks: CrossRelink[]; missing: MissingAsset[]; hashes: Map<string, Map<string, string>> }> {
+  const relinks: CrossRelink[] = [];
+  const hashes = new Map<string, Map<string, string>>();
+  let open = missing.filter((m) => m.hash !== undefined && m.size !== undefined);
+  const unsearchable = missing.filter((m) => m.hash === undefined || m.size === undefined);
+  for (const folder of folders) {
+    if (open.length === 0) break;
+    const sizes = new Set(open.map((m) => m.size));
+    const free = folder.scanned.filter((f) => !folder.claimed.has(f.relPath) && sizes.has(f.size));
+    if (free.length === 0) continue;
+    const found = new Map<string, string>();
+    for (const [relPath, hash] of await hashIn(
+      folder.path,
+      free.map((f) => f.relPath),
+    ))
+      if (hash) found.set(relPath, hash);
+    hashes.set(folder.path, found);
+    const taken = new Set<string>();
+    const still: MissingAsset[] = [];
+    for (const m of open) {
+      const match = pickMatch(
+        free.filter((f) => f.size === m.size && !taken.has(f.relPath) && found.get(f.relPath) === m.hash),
+        m.path,
+      );
+      if (match === undefined) {
+        still.push(m);
+        continue;
+      }
+      taken.add(match);
+      relinks.push({
+        assetId: m.assetId,
+        fromFolder: m.folder,
+        from: m.path,
+        folderId: folder.id,
+        folderPath: folder.path,
+        to: match,
+      });
+    }
+    open = still;
+  }
+  return { relinks, missing: [...open, ...unsearchable], hashes };
 }

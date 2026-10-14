@@ -11,14 +11,14 @@ import {
   publishFingerprint,
 } from '@photobook/shared';
 import { type PublishConfig, requireR2, socialApiUrl } from './config.js';
-import { type FrozenBook, freeze } from './freeze.js';
+import { type FrozenAsset, type FrozenBook, freeze, outName } from './freeze.js';
 import { outDir, processAsset } from './images.js';
 import { mapLimit, retry } from './limit.js';
 import type { Reporter } from './log.js';
 import { buildManifest, type ImageObject, imageObjects, type ProcessedAsset } from './manifest.js';
 import { pageImageObjects, type RenderedPage, renderPages } from './pages.js';
 import { S3Store } from './r2.js';
-import { nextPassword, readSite, siteWithBook, writeSite } from './site.js';
+import { readSite, siteWithBook, writeSite } from './site.js';
 import { StateFile } from './state.js';
 import { CACHE_IMMUTABLE, CACHE_NONE, CONTENT_TYPES, type ObjectStore, UnsupportedError } from './store.js';
 import { WranglerStore } from './wranglerStore.js';
@@ -33,6 +33,8 @@ export interface PublishOptions {
   skipPages?: boolean;
   /** Do not write `publish.lastPublishedAt` into the project file (the editor records it itself). */
   record?: boolean;
+  /** Publish without the edits of a `library.json` that cannot be read instead of stopping (`--ignore-library`). */
+  ignoreLibrary?: boolean;
   /** Injected store (tests); defaults to the configured transport. */
   store?: ObjectStore;
   now?: () => Date;
@@ -55,6 +57,11 @@ export class UploadError extends Error {
   }
 }
 
+/** Used assets with non-default develop settings. */
+export function developedAssets(frozen: FrozenBook): FrozenAsset[] {
+  return [...frozen.assets.values()].filter((a) => a.developHash);
+}
+
 export function createStore(config: PublishConfig): ObjectStore {
   const r2 = requireR2(config);
   return r2.transport === 'wrangler' ? new WranglerStore(r2.bucket) : new S3Store(r2);
@@ -70,12 +77,35 @@ export async function publish(options: PublishOptions): Promise<PublishResult> {
   const store = options.store ?? createStore(config);
   const base = r2.publicUrl;
 
+  // A dry run tolerates developed photos that have no render yet (a warning below); a real publish does not.
   const frozen = await reporter.step(
     'freeze',
-    () => freeze(projectPath),
-    (f) => `${f.book.pages.length} pages, ${f.assets.size} photos used, ${f.rehashed} rehashed`,
+    () => freeze(projectPath, { allowMissingRenders: dryRun, ignoreLibrary: options.ignoreLibrary }),
+    (f) => {
+      const developed = developedAssets(f);
+      return (
+        `${f.book.pages.length} pages, ${f.assets.size} photos used, ${f.rehashed} rehashed` +
+        (developed.length
+          ? `, ${developed.length} developed (${developed.filter((a) => !a.renderMissing).length} rendered)`
+          : '')
+      );
+    },
   );
   const { book } = frozen;
+  for (const warning of frozen.warnings) reporter.warn(warning);
+  const developed = developedAssets(frozen);
+  if (dryRun) {
+    for (const a of developed) {
+      if (a.renderMissing) {
+        reporter.warn(
+          `${a.relPath}: developed, render missing. Open the book in the editor and let it render before publishing.`,
+        );
+      } else {
+        reporter.info(`${a.relPath}: developed, render present (current)`);
+      }
+    }
+  }
+  const unrendered = developed.filter((a) => a.renderMissing);
   const state = await StateFile.load(frozen.projectPath, r2.bucket);
   const imageOptions = { downloadMaxEdge: config.download.maxEdge, downloadQuality: config.download.quality };
 
@@ -111,6 +141,14 @@ export async function publish(options: PublishOptions): Promise<PublishResult> {
   let pageImages = new Map<string, RenderedPage>();
   if (options.skipPages) {
     reporter.emit({ type: 'step', step: 'pages', status: 'skipped', detail: '--skip-pages' });
+  } else if (unrendered.length) {
+    // Dry run only: pages would be drawn from the original pixels and poison the page cache.
+    reporter.emit({
+      type: 'step',
+      step: 'pages',
+      status: 'skipped',
+      detail: `${unrendered.length} developed render(s) missing`,
+    });
   } else {
     const result = await reporter.step(
       'pages',
@@ -132,7 +170,7 @@ export async function publish(options: PublishOptions): Promise<PublishResult> {
     objects.push({ ...o, dir });
   };
   for (const p of processed.values()) {
-    const dir = outDir(frozen.projectPath, p.asset.hash);
+    const dir = outDir(frozen.projectPath, outName(p.asset));
     for (const o of imageObjects(book, p)) add(o, dir);
   }
   for (const r of pageImages.values()) for (const o of pageImageObjects(book, r)) add(o, r.dir);
@@ -223,17 +261,13 @@ export async function publish(options: PublishOptions): Promise<PublishResult> {
     'site',
     async () => {
       const site = await readSite(store);
-      const password = await nextPassword(site.password, {
-        word: config.sitePassword,
-        expiresAt: config.sitePasswordExpiresAt,
-      });
       const api = apiUrl ?? site.api;
-      const next = siteWithBook({ ...site, password, api }, manifest);
+      const next = siteWithBook({ ...site, api }, manifest);
       await writeSite(store, next);
       return next;
     },
     (site) =>
-      `${site.books.length} listed book(s), password ${site.password ? `v${site.password.version}` : 'not set'}`,
+      `${site.books.length} listed book(s), book password ${manifest.password ? `v${manifest.password.version}` : 'off'}${site.password ? ', legacy site password still set' : ''}`,
   );
 
   let pruned = 0;

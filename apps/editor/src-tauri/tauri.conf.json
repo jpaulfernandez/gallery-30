@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Photobook",
+  "productName": "oddhalls",
   "version": "0.1.0",
   "identifier": "com.photobook.editor",
   "build": {
@@ -13,12 +13,17 @@
     "windows": [
       {
         "label": "main",
-        "title": "Photobook",
+        "title": "oddhalls",
         "width": 1440,
         "height": 900,
         "minWidth": 1100,
         "minHeight": 700,
-        "dragDropEnabled": false
+        "dragDropEnabled": false,
+        "backgroundThrottling": "disabled",
+        "titleBarStyle": "Overlay",
+        "hiddenTitle": true,
+        "theme": "Dark",
+        "trafficLightPosition": { "x": 16, "y": 15 }
       }
     ],
     "security": {
@@ -26,7 +31,10 @@
       "dangerousDisableAssetCspModification": ["style-src"],
       "assetProtocol": {
         "enable": true,
-        "scope": ["$APPDATA/**"]
+        "scope": {
+          "allow": ["$APPDATA/cache/**"],
+          "deny": ["$APPDATA/ai.env", "$APPDATA/publish.env"]
+        }
       }
     }
   },

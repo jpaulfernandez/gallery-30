@@ -19,6 +19,7 @@
     "@tanstack/react-router": "^1.170.41",
     "@tanstack/react-virtual": "^3.14.13",
     "@tauri-apps/api": "^2.12.1",
+    "@tauri-apps/plugin-clipboard-manager": "^2.4.2",
     "@tauri-apps/plugin-dialog": "^2.8.1",
     "@tauri-apps/plugin-fs": "^2.6.0",
     "@tauri-apps/plugin-log": "^2.10.0",
@@ -26,6 +27,7 @@
     "immer": "^11.1.21",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "zod": "^4.6.5",
     "zundo": "^2.3.0",
     "zustand": "^5.0.15"
   },

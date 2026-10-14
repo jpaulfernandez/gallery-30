@@ -1,0 +1,304 @@
+# Pinned model manifest (D4.2, docs/design/archive/DEVELOP_PLAN.md 4.8-4.10). Compiled into the crate (`ai::registry`).
+#
+# Every model is a list of files downloaded into `<appdata>/models/<name>/<version>/<file>` and checked against the
+# SHA-256 here. The first file is the ONNX graph a session loads; the others are its external data files, which must
+# sit next to it under the exact name the graph references.
+#
+# - URLs pin a Hugging Face commit (`resolve/<sha>/...`), so a pinned file can never change under us.
+# - `bytes` and `sha256` come from the Hub's tree API (`/api/models/<repo>/tree/<sha>`; `lfs.oid` is the SHA-256 of
+#   the file). They were looked up on 2026-10-10, not by hashing a download, except where a comment says otherwise.
+# - `verified = false` marks an entry whose hash is not pinned yet; it is listed but cannot be downloaded.
+# - `input` is the static NCHW shape we feed. `dims` overrides the graph's symbolic dimensions (ONNX `dim_param`
+#   names) so CoreML sees static shapes; `static_input = false` keeps a model's inputs dynamic (prompted decoders).
+# - Only permissive licences (plan section 2, "Model licences").
+#
+# Bump `version` whenever a file changes: the version is part of the install path, of the CoreML cache path and of
+# the AI mask cache key, so old masks get regenerated.
+
+# Subject (no prompt). 1024 px, ImageNet mean/std, NCHW f32 in (cast to fp16 inside the graph).
+# IO: `input_image` f32 [1,3,1024,1024] -> `output_image` f32 [1,1,1024,1024] logits (apply a sigmoid).
+[[model]]
+name = "birefnet-lite"
+title = "BiRefNet lite"
+version = "fp16-de15b22"
+task = "subject"
+licence = "MIT"
+licence_url = "https://github.com/ZhengPeng7/BiRefNet/blob/main/LICENSE"
+homepage = "https://huggingface.co/onnx-community/BiRefNet_lite-ONNX"
+input = [1, 3, 1024, 1024]
+verified = true
+
+[[model.files]]
+path = "model_fp16.onnx"
+url = "https://huggingface.co/onnx-community/BiRefNet_lite-ONNX/resolve/de15b22ba131738a16dff04aab8bdf8dc32e3ac1/onnx/model_fp16.onnx"
+bytes = 114538221
+sha256 = "d39b897ceb16ae654c1731f3dba0cf9b368d9cae74b5a57459b455cc8bfec402"
+
+# Subject, fast preview (Apache-2.0 U^2-Netp, 4.7 MB). BiRefNet lite does not compile in Core ML here (fp16 and fp32
+# alike: a dilated `Conv` in `aspp_deforms` has no `pads`; checked 2026-10-10 on `onnx/model.onnx` and
+# `onnx/model_fp16.onnx` of onnx-community/BiRefNet_lite-ONNX), so it runs on the CPU in 5.5-7 s; this one is for an
+# instant, coarser mask. rembg's `u2netp.onnx` as published by BritishWerewolf/U-2-Netp (the same bytes as
+# edgetools/u2netp and skillsafe-ai/u2netp). 320 px, ImageNet mean/std, NCHW f32.
+# IO: `input.1` f32 [1,3,320,320] -> seven side outputs `1959` ... `1965` f32 [1,1,320,320], already sigmoided;
+# `1959` is the fused one.
+[[model]]
+name = "u2netp"
+title = "U2-Netp"
+version = "fp32-7112208"
+task = "subject-fast"
+licence = "Apache-2.0"
+licence_url = "https://github.com/xuebinqin/U-2-Net/blob/master/LICENSE"
+homepage = "https://huggingface.co/BritishWerewolf/U-2-Netp"
+input = [1, 3, 320, 320]
+verified = true
+
+[[model.files]]
+path = "model.onnx"
+url = "https://huggingface.co/BritishWerewolf/U-2-Netp/resolve/7112208dbac3a3642496c8d54e2f0f9bb3dc1dc8/onnx/model.onnx"
+bytes = 4574861
+sha256 = "309c8469258dda742793dce0ebea8e6dd393174f89934733ecc8b14c76f4ddd8"
+
+# Sky (and water, person). SegFormer MiT-B2, 384 px, ImageNet mean/std.
+# IO: `input` f32 [batch,3,height,width] -> `output_fp32` f32 [batch,4,height,width] logits;
+# classes 0 background, 1 sky, 2 water, 3 person (softmax over the 4).
+[[model]]
+name = "skywater-seg"
+title = "SkyWater-Seg"
+version = "b2-fp16-dac2558"
+task = "sky"
+licence = "MIT"
+licence_url = "https://huggingface.co/Realcat/skywater_seg"
+homepage = "https://huggingface.co/Realcat/skywater_seg"
+input = [1, 3, 384, 384]
+dims = { batch = 1, height = 384, width = 384 }
+verified = true
+
+[[model.files]]
+path = "skywater_segformer_b2_fp16.onnx"
+url = "https://huggingface.co/Realcat/skywater_seg/resolve/dac255883ec5faf508561a47172096bfd8708db0/skywater_segformer_b2_fp16.onnx"
+bytes = 49867699
+sha256 = "a4f518e6ace87b3ee473ea2578d00f0fb5f7bf8e4e6a3a49ae368c048c4e47c3"
+
+# People: person boxes for SAM. 640 x 640 stretched, RGB / 255, no mean/std.
+# IO: `pixel_values` f32 [batch_size,3,height,width] -> `logits` f32 [batch_size,300,80] (sigmoid; COCO class 0 is
+# person) and `pred_boxes` f32 [batch_size,300,4] (cx, cy, w, h as fractions of the input).
+[[model]]
+name = "rtdetr-v2-r50"
+title = "RT-DETR v2 R50"
+version = "fp16-1699ea0"
+task = "people-detect"
+licence = "Apache-2.0"
+licence_url = "https://github.com/lyuwenyu/RT-DETR/blob/main/LICENSE"
+homepage = "https://huggingface.co/onnx-community/rtdetr_v2_r50vd-ONNX"
+input = [1, 3, 640, 640]
+dims = { batch_size = 1, height = 640, width = 640 }
+verified = true
+
+[[model.files]]
+path = "model_fp16.onnx"
+url = "https://huggingface.co/onnx-community/rtdetr_v2_r50vd-ONNX/resolve/1699ea019e5570bb7283d80ee9a9e42d6245436f/onnx/model_fp16.onnx"
+bytes = 86484200
+sha256 = "5f94f4d84e9c7258e408af315c20395a0e835e324c1e4aa7cd23bd5f93258b16"
+
+# SAM 2.1 Hiera-tiny image encoder (transformers.js export, external data). 1024 px, ImageNet mean/std.
+# IO: `pixel_values` f32 [batch_size,3,1024,1024] -> `image_embeddings.0` [b,32,256,256], `image_embeddings.1`
+# [b,64,128,128], `image_embeddings.2` [b,256,64,64] (all f32). The repo card has no licence field; SAM 2.1 is
+# Apache-2.0 upstream (facebook/sam2.1-hiera-tiny).
+[[model]]
+name = "sam2.1-tiny-encoder"
+title = "SAM 2.1 tiny encoder"
+version = "fp16-814a066"
+task = "sam-encoder"
+licence = "Apache-2.0"
+licence_url = "https://github.com/facebookresearch/sam2/blob/main/LICENSE"
+homepage = "https://huggingface.co/onnx-community/sam2.1-hiera-tiny-ONNX"
+input = [1, 3, 1024, 1024]
+dims = { batch_size = 1 }
+verified = true
+
+[[model.files]]
+path = "vision_encoder_fp16.onnx"
+url = "https://huggingface.co/onnx-community/sam2.1-hiera-tiny-ONNX/resolve/814a066640debee5a91e70aa401fb8e17e030503/onnx/vision_encoder_fp16.onnx"
+bytes = 314925
+sha256 = "7773e79d589dada8e1e630cc7eb18b17b2c5b4faeb1eaab5ebf9df618ecbd50a"
+
+[[model.files]]
+path = "vision_encoder_fp16.onnx_data"
+url = "https://huggingface.co/onnx-community/sam2.1-hiera-tiny-ONNX/resolve/814a066640debee5a91e70aa401fb8e17e030503/onnx/vision_encoder_fp16.onnx_data"
+bytes = 67005504
+sha256 = "a4dd3759e9b6a476d991fb3493787992e78777e51462695e1bede71ae258103e"
+
+# SAM 2.1 prompt encoder + mask decoder (fp32: the fp16 decoder is only 10 MB smaller). Prompts are dynamic.
+# IO: `input_points` f32 [b,1,n,2] (pixels in the 1024 frame; pad value -10), `input_labels` i64 [b,1,n]
+# (1 foreground, 0 background, -1 padding), `input_boxes` f32 [b,nb,4] (x0,y0,x1,y1 in the 1024 frame), and the
+# three encoder embeddings -> `iou_scores` [b,n,3], `pred_masks` [b,n,3,256,256] logits, `object_score_logits` [b,n,1].
+[[model]]
+name = "sam2.1-tiny-decoder"
+title = "SAM 2.1 tiny decoder"
+version = "fp32-814a066"
+task = "sam-decoder"
+licence = "Apache-2.0"
+licence_url = "https://github.com/facebookresearch/sam2/blob/main/LICENSE"
+homepage = "https://huggingface.co/onnx-community/sam2.1-hiera-tiny-ONNX"
+input = []
+dims = { batch_size = 1 }
+static_input = false
+verified = true
+
+[[model.files]]
+path = "prompt_encoder_mask_decoder.onnx"
+url = "https://huggingface.co/onnx-community/sam2.1-hiera-tiny-ONNX/resolve/814a066640debee5a91e70aa401fb8e17e030503/onnx/prompt_encoder_mask_decoder.onnx"
+bytes = 213114
+sha256 = "874414704c5d686db7d206a35f6e15d26563d50c8c4468fccc6739bd7e491dcf"
+
+[[model.files]]
+path = "prompt_encoder_mask_decoder.onnx_data"
+url = "https://huggingface.co/onnx-community/sam2.1-hiera-tiny-ONNX/resolve/814a066640debee5a91e70aa401fb8e17e030503/onnx/prompt_encoder_mask_decoder.onnx_data"
+bytes = 20958208
+sha256 = "e9874d900dd4134ed60eab1e97910327c2419e0b2954485d8fd6e7f1a1470f47"
+
+# Depth (relative inverse depth: larger is nearer). 518 x 518 (multiple of 14), ImageNet mean/std, bicubic.
+# IO: `pixel_values` f32 [batch_size,3,height,width] -> `predicted_depth` f32 [batch_size,height,width].
+# The repo now points at onnx-community/depth-anything-v2-small-ONNX (external data); this single-file fp16 is the
+# same network.
+[[model]]
+name = "depth-anything-v2-small"
+title = "Depth Anything V2 Small"
+version = "fp16-4472b73"
+task = "depth"
+licence = "Apache-2.0"
+licence_url = "https://huggingface.co/depth-anything/Depth-Anything-V2-Small"
+homepage = "https://huggingface.co/onnx-community/depth-anything-v2-small"
+input = [1, 3, 518, 518]
+dims = { batch_size = 1, height = 518, width = 518 }
+verified = true
+
+[[model.files]]
+path = "model_fp16.onnx"
+url = "https://huggingface.co/onnx-community/depth-anything-v2-small/resolve/4472b7362082ad9968fee890ca0f1e5aca36b93d/onnx/model_fp16.onnx"
+bytes = 49642442
+sha256 = "2df6223f206b5164e21f664ace61dabeb9bb6a49b8b5a3e00510b4807d0f5b04"
+
+# Denoise, primary (D5). ailia's ONNX export of NAFNet-SIDD-width32: fp32, opset 11, 117 MB (the plan's 63 MB fp16
+# exists only as LiteRT/.tflite). sRGB 0..1, NCHW, tile 512 with overlap.
+# IO: `inp` f32 [1,3,height,width] (dynamic, padded to a multiple of 16 inside the graph) -> `3195` f32
+# [1,3,height,width]. Pinned in D5.1 by hashing a download (2026-10-10): the bucket's MD5
+# (x-goog-hash md5=tGuXkeInMT4i3U6kT4PX0Q==) matched, and the file loads and runs in ONNX Runtime at 512².
+# The URL is not content-addressed, so the SHA-256 below is what guards it.
+[[model]]
+name = "nafnet-sidd-width32"
+title = "NAFNet SIDD width32"
+version = "ailia-fp32-20230523"
+task = "denoise"
+licence = "MIT"
+licence_url = "https://github.com/megvii-research/NAFNet/blob/main/LICENSE"
+homepage = "https://github.com/axinc-ai/ailia-models/tree/master/image_restoration/nafnet"
+input = [1, 3, 512, 512]
+dims = { height = 512, width = 512 }
+verified = true
+
+[[model.files]]
+path = "NAFNet-SIDD-width32.onnx"
+url = "https://storage.googleapis.com/ailia-models/nafnet/NAFNet-SIDD-width32.onnx"
+bytes = 117115760
+sha256 = "c3af481193f1031704684df176c0099655c0cecf30dd8bd7f5aa64cadbd4ead4"
+
+# Denoise, fallback (D5). Heliosoph's export of cszn/SCUNet color_real_psnr: fp32, opset 17, dynamic H/W (multiples
+# of 8), fixed to 512 here through `dims`. Upstream code Apache-2.0; the export repo ships KAIR's MIT licence.
+# sRGB 0..1, NCHW. IO: `image` f32 [batch,3,height,width] -> `denoised` f32 [batch,3,height,width].
+[[model]]
+name = "scunet-color-real-psnr"
+title = "SCUNet real PSNR"
+version = "fp32-6d11417"
+task = "denoise"
+licence = "Apache-2.0"
+licence_url = "https://github.com/cszn/SCUNet/blob/main/LICENSE"
+homepage = "https://huggingface.co/Heliosoph/scunet-onnx"
+input = [1, 3, 512, 512]
+dims = { batch = 1, height = 512, width = 512 }
+verified = true
+
+[[model.files]]
+path = "scunet_color_real_psnr.onnx"
+url = "https://huggingface.co/Heliosoph/scunet-onnx/resolve/6d11417ee2fbcc73783c502a238ac115097754fe/scunet_color_real_psnr.onnx"
+bytes = 3798678
+sha256 = "231be201ab413dbc999d7951caa9844846b93a12a40a41e037d6b5888ed4e88c"
+
+[[model.files]]
+path = "scunet_color_real_psnr.onnx.data"
+url = "https://huggingface.co/Heliosoph/scunet-onnx/resolve/6d11417ee2fbcc73783c502a238ac115097754fe/scunet_color_real_psnr.onnx.data"
+bytes = 73138176
+sha256 = "98825ea1210b641c71e5f052f582c70c49fd44b35387ebe2c034268c17df3feb"
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Workflow plan 26 (docs/design/DENOISE_EVAL.md): candidates exported by scripts/models/export_{nafnet,scunet,drunet}.py
+# and waiting for a GitHub Release of this repo to host them. They stay commented out until the release exists: the
+# manifest test refuses unverified hashes and a pinned URL that does not resolve would only fail at download time.
+# Every export is a static 512² fp32 graph: on Core ML (M3 Pro) the fp16 conversions were 1.08-6.7x slower than fp32
+# (DENOISE_EVAL.md, "Speed"). The exports are byte-reproducible with torch 2.14.0, onnx 1.23.2 and
+# onnxconverter-common 1.16.0; rebuild, compare the SHA-256 below, upload, then uncomment.
+# Release URL pattern: https://github.com/jpaulfernandez/gallery-30/releases/download/<tag>/<file>.
+
+# TODO(plan 26): NAFNet-SIDD-width64, static 512² fp32. Not exported with its weights: the official .pth (Google Drive)
+# and mlx-community/NAFNet-SIDD-width64 (MIT, 463,995,842 bytes) are over the evaluation's 300 MB download limit.
+# A random-weight export of the same graph is 463,926,927 bytes, 1 Core ML partition, ~276 ms per tile (~32 s at
+# 24 MP). Fill in `bytes` and `sha256` from `export_nafnet.py --weights NAFNet-SIDD-width64.pth --width 64` and set
+# `verified = true`. The settings model `nafnet-w64` already maps to this name (`ai::denoise::model_name`).
+# [[model]]
+# name = "nafnet-sidd-width64"
+# title = "NAFNet SIDD width64"
+# version = "static512-fp32-p26"
+# task = "denoise"
+# licence = "MIT"
+# licence_url = "https://github.com/megvii-research/NAFNet/blob/main/LICENSE"
+# homepage = "https://github.com/megvii-research/NAFNet"
+# input = [1, 3, 512, 512]
+# verified = false
+#
+# [[model.files]]
+# path = "NAFNet-SIDD-width64-512-fp32.onnx"
+# url = "https://github.com/jpaulfernandez/gallery-30/releases/download/models-2026-10/NAFNet-SIDD-width64-512-fp32.onnx"
+# bytes = 0  # TODO: about 463,926,927
+# sha256 = ""  # TODO
+
+# TODO(plan 26): SCUNet real PSNR re-exported with static shapes and no Einsum, to REPLACE the Heliosoph entry above
+# (same name, and a duplicate name is rejected; same weights: outputs within 5e-7). 1 Core ML partition instead of
+# 141, ~0.5 s per tile. Borderline: 58-65 s for 24 MP extrapolated from tile times on a loaded machine; it needs an
+# idle, real 24 MP timing before it leaves `CPU_ONLY_MODELS` (today ~12 min on the CPU).
+# [[model]]
+# name = "scunet-color-real-psnr"
+# title = "SCUNet real PSNR"
+# version = "static512-fp32-p26"
+# task = "denoise"
+# licence = "Apache-2.0"
+# licence_url = "https://github.com/cszn/SCUNet/blob/main/LICENSE"
+# homepage = "https://github.com/cszn/SCUNet"
+# input = [1, 3, 512, 512]
+# verified = true
+#
+# [[model.files]]
+# path = "scunet-real-psnr-512-fp32.onnx"
+# url = "https://github.com/jpaulfernandez/gallery-30/releases/download/models-2026-10/scunet-real-psnr-512-fp32.onnx"
+# bytes = 77695966
+# sha256 = "fe844d4e406db66b6f903d2a9e11d5544a79085c2333755609a7f63915798af3"
+
+# TODO(plan 26): DRUNet colour for the σ-map experiment (crate feature `denoise-drunet`, `ai::drunet`). Its input is
+# [1, 4, 512, 512] (RGB + σ), so it needs its own task (e.g. `denoise-sigma`) before it can be pinned; KAIR and DPIR
+# are MIT. 1 Core ML partition, ~216 ms per tile (~25 s at 24 MP). The `Task` variant does not exist yet: add it
+# before uncommenting, or the manifest fails to parse.
+# [[model]]
+# name = "drunet-color"
+# title = "DRUNet colour"
+# version = "static512-fp32-p26"
+# task = "denoise-sigma"
+# licence = "MIT"
+# licence_url = "https://github.com/cszn/KAIR/blob/master/LICENSE"
+# homepage = "https://github.com/cszn/DPIR"
+# input = [1, 4, 512, 512]
+# verified = true
+#
+# [[model.files]]
+# path = "drunet-color-512-fp32.onnx"
+# url = "https://github.com/jpaulfernandez/gallery-30/releases/download/models-2026-10/drunet-color-512-fp32.onnx"
+# bytes = 130589231
+# sha256 = "4431b4f45be7965dec7691dc8687daeb3b238d5a687187ebc6cd76400533f5b5"

@@ -1,0 +1,38 @@
+# Gallery 30
+
+> Gallery 30 is a free, open-source (MIT) desktop app that turns a folder of photos into a designed, zine-style photo book that friends read on their phones. You edit on your own computer against the original files; nothing is uploaded while you design. When the book is ready, one command optimizes the images and publishes the book to a Cloudflare R2 bucket that you own. There is no Gallery 30 account, no central server and no telemetry.
+
+The project lives at https://github.com/jpaulfernandez/gallery-30. The desktop editor app is called "oddhalls" (its window and `oddhalls.app`); inside the repository it is also called "Photobook", and the publish command is `photobook`.
+
+## Key facts
+
+- Privacy: the editor opens your photo folder in place and keeps thumbnails in a cache on your own disk. Originals are never copied or uploaded. Publishing sends resized copies (AVIF, WebP, JPEG) and one download copy per used photo only to the R2 bucket you configure. No analytics or telemetry in the editor, CLI or reader. Credentials live in a `publish.env` file in the app data folder with owner-only permissions, never in the project file.
+- Parts: a Tauri 2 desktop editor (React 19, Rust), a Node CLI `photobook publish <project.json>` (sharp for images, Playwright for page images), a Preact mobile web reader of about 60 KB gzipped, and an optional Cloudflare Worker + D1 database for likes and a download log.
+- Book sizes: 4:5 phone portrait (1080 x 1350), 9:16 story, square, A4 portrait and A4 landscape.
+- Editor: more than 80 layouts for one to six photos, custom pages with snapping photo boxes and shapes, pan/zoom/rotate inside slots, text with Fraunces, Inter, Instrument Serif and JetBrains Mono, undo/redo, autosave with a backup of the previous version, phone preview, relinking of moved photos by size and content hash.
+- Reader: one page per screen, swipe to turn, page grid, full-quality downloads, likes, a collection downloadable as a zip, and pages shared as 1080 x 1350 feed or 1080 x 1920 story images. Works in iOS Safari without an install. Listed books show on the site's home page; unlisted books are reachable by link only. A shared site password is a soft, browser-side gate, not real security.
+- Cost: the software is free. Hosting typically fits free tiers: Cloudflare R2 (10 GB stored, free egress), Vercel Hobby or Cloudflare Pages for the reader, Workers and D1 for the optional social features.
+- Platforms and status: works end to end on macOS. Linux and Windows builds are untested. No prebuilt downloads yet; build from source with Node 22+, pnpm 11, Rust and CMake.
+- Author: Jan Paul Fernandez (https://www.janpaulfernandez.com/).
+
+## Docs
+
+- [README](https://github.com/jpaulfernandez/gallery-30/blob/main/README.md): overview, features, quick start
+- [Installation](https://github.com/jpaulfernandez/gallery-30/blob/main/docs/INSTALLATION.md): prerequisites, running the editor, building the app
+- [Accounts](https://github.com/jpaulfernandez/gallery-30/blob/main/docs/ACCOUNTS.md): which accounts you need, what they cost, where secrets live
+- [Publishing](https://github.com/jpaulfernandez/gallery-30/blob/main/docs/PUBLISHING.md): R2, the reader, settings, publishing, likes and downloads
+- [Worker API](https://github.com/jpaulfernandez/gallery-30/blob/main/worker/README.md): the likes and download-log API
+
+## Quick start
+
+```bash
+git clone https://github.com/jpaulfernandez/gallery-30.git
+cd gallery-30 && pnpm install
+pnpm dev
+```
+
+## Optional
+
+- [License (MIT)](https://github.com/jpaulfernandez/gallery-30/blob/main/LICENSE)
+- [Contributing](https://github.com/jpaulfernandez/gallery-30/blob/main/CONTRIBUTING.md)
+- [Issues](https://github.com/jpaulfernandez/gallery-30/issues)

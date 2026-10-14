@@ -12,8 +12,8 @@ import {
 } from '@dnd-kit/core';
 import type { BookTemplate, LayoutData, Theme } from '@photobook/shared';
 import { type ReactNode, useMemo, useState } from 'react';
-import { useAssetsStore } from '../../store/assets';
-import { useBookStore } from '../../store/book';
+import { fileOfAsset, useAssetsStore, usePhotoFile } from '../../store/assets';
+import { useDesignBook } from '../../store/design';
 import { LayoutThumb, useLayoutItems } from '../layouts/LayoutThumb';
 import { findLayout } from '../layouts/layoutGroups';
 import {
@@ -46,7 +46,8 @@ const collisionDetection: CollisionDetection = (args) => {
     return pointerWithin({ ...args, droppableContainers: only((c) => isPageDropDndId(c) || isPageDndId(c)) });
   }
   const hits = pointerWithin({ ...args, droppableContainers: only((c) => !isPageDndId(c) && !isPageDropDndId(c)) });
-  if (hits.length > 0 || (args.active.data.current as DragData | undefined)?.kind !== 'asset') return hits;
+  const kind = (args.active.data.current as DragData | undefined)?.kind;
+  if (hits.length > 0 || (kind !== 'asset' && kind !== 'library')) return hits;
   return pointerWithin({ ...args, droppableContainers: only(isPageDropDndId) });
 };
 
@@ -98,7 +99,7 @@ export function EditorDnd({ children }: { children: ReactNode }) {
 
 /** The dragged layout card's page, small, under the pointer. */
 function LayoutDragPreview({ data }: { data: LayoutDragData }) {
-  const book = useBookStore((s) => s.book);
+  const book = useDesignBook();
   const layout = book ? findLayout(data.layoutId, book) : undefined;
   if (!book || !layout) return null;
   return <LayoutDragThumb layout={layout} template={book.template} theme={book.theme} />;
@@ -107,24 +108,27 @@ function LayoutDragPreview({ data }: { data: LayoutDragData }) {
 function LayoutDragThumb({ layout, template, theme }: { layout: LayoutData; template: BookTemplate; theme: Theme }) {
   const items = useLayoutItems(layout, template, theme);
   return (
-    <div
-      className="cursor-grabbing rounded-[2px] shadow-black/60 shadow-xl ring-2 ring-accent"
-      style={{ width: OVERLAY_SIZE }}
-    >
+    <div className="cursor-grabbing rounded-[2px] shadow-float ring-2 ring-accent" style={{ width: OVERLAY_SIZE }}>
       <LayoutThumb items={items} template={template} />
     </div>
   );
 }
 
 function DragPreview({ data }: { data: PhotoDragData }) {
-  const relPath = useBookStore((s) =>
-    data.kind === 'asset' ? data.relPath : (s.book?.assets[data.assetId]?.path ?? ''),
+  // A filmstrip drag carries the file's key; a slot drag only the asset id; a Library tab drag the photo key.
+  const project = useAssetsStore((s) =>
+    data.kind === 'asset'
+      ? s.files[data.relPath]
+      : data.kind === 'slot'
+        ? fileOfAsset(s.files, data.assetId)
+        : undefined,
   );
-  const file = useAssetsStore((s) => s.files[relPath]);
+  const library = usePhotoFile(data.kind === 'library' ? data.key : null);
+  const file = project ?? library;
   const src = file?.thumbUrl ?? file?.proxyUrl;
   return (
     <div
-      className="cursor-grabbing overflow-hidden rounded-md bg-line shadow-black/50 shadow-xl ring-2 ring-accent"
+      className="cursor-grabbing overflow-hidden rounded-md bg-line shadow-float ring-2 ring-accent"
       style={{ width: OVERLAY_SIZE, height: OVERLAY_SIZE }}
     >
       {src && <img src={src} alt="" draggable={false} className="h-full w-full object-cover" />}

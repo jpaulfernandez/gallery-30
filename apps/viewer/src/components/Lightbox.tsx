@@ -214,7 +214,7 @@ export default function Lightbox({
                   src={showsFull(id) ? img.download.url : img.share}
                   width={img.width}
                   height={img.height}
-                  alt=""
+                  alt={img.alt ?? ''}
                   decoding="async"
                   draggable={false}
                   style={{ backgroundImage: `url("${img.placeholder}")` }}

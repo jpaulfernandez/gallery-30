@@ -1,20 +1,121 @@
 @import "@photobook/shared/fonts.css";
 @import "tailwindcss";
 
-/* Editor chrome tokens from docs/design/DESIGN_NOTES.md. */
-@theme {
+/*
+ * Plan 44, tokens v2: the colour, radius, elevation and motion system of docs/design/ODDHALLS_UI_PLAN.md 2.2 and 2.3.
+ * Every colour, radius, shadow and duration in the editor comes from these names; `scripts/check-palette.mjs` (in
+ * `pnpm lint`) fails on a Tailwind palette class. Colours are sRGB hex here (the fallback) and OKLCH in the
+ * `@supports` block below; the hex values are the OKLCH ones converted, not the rounded ones of the table. `static`
+ * emits every variable, used or not, so the kitchen sink (`/fixture`) can read them all.
+ */
+@theme static {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Fraunces", ui-serif, Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  --color-canvas: #1a1a1a;
-  --color-stage: #0d0d0d;
-  --color-panel: #222222;
-  --color-panel-2: #262626;
-  --color-line: #333333;
-  --color-fg: #e5e5e5;
-  --color-fg-muted: #8a8a8a;
-  --color-accent: #4f8cff;
+  /*
+   * Surfaces. The stage is achromatic and fixed (scrims, chips and marks over a photo use `stage/NN`). `surround` is
+   * the photo wells' background (Develop, the Review loupe, the Design desk, the Cull grid): the stage by default,
+   * and what Settings → Appearance → Surround picks (`lib/surround.ts` sets it on `:root`).
+   */
+  --color-stage: #0f0f0f;
+  --color-stage-mid: #747474;
+  --color-surround: var(--color-stage);
+  --color-canvas: #1c1a19;
+  --color-panel: #23211e;
+  --color-panel-2: #2d2b28;
+  --color-panel-3: #383531;
+  --color-hairline: rgb(255 255 255 / 0.07);
+  --color-line: rgb(255 255 255 / 0.12);
+
+  /* Text. Every interactive label uses `fg` or `fg-2`; `fg-muted` is for hints, counts and disabled. */
+  --color-fg: #eae7e4;
+  --color-fg-2: #a7a4a0;
+  --color-fg-muted: #7c7a76;
+
+  /* Brass. Never on a photo, except the Looks tile ring and a frame's selection outline. */
+  --color-accent: #e3b667;
+  --color-accent-ink: #201a10;
+  --color-accent-soft: rgb(227 182 103 / 0.14);
+
+  /* Semantic. Over a photo only white, black and `guide` are drawn. */
+  --color-danger: #f05653;
+  --color-warn: #f59145;
+  --color-ok: #6fc082;
+  --color-guide: #6ec3eb;
+  --color-pick: var(--color-fg);
+
+  /* Thumbnails 4, buttons 6, cards 8, pills and floating toolbars 12 or full. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 9999px;
+
+  /* Regions are separated by a value step; raised things get the top highlight, floating things a shadow. */
+  --shadow-raised: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-float: 0 8px 24px -8px rgb(0 0 0 / 0.6);
+  --highlight-top: inset 0 1px 0 rgb(255 255 255 / 0.04);
+
+  /*
+   * One easing for enters (`ease-in` stays for exits) and three durations, zero under reduced motion (below). The
+   * `--transition-duration-*` keys are Tailwind's theme namespace for `duration-*`, so `duration-fast|base|slow` work.
+   */
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --transition-duration-fast: var(--dur-fast);
+  --transition-duration-base: var(--dur-base);
+  --transition-duration-slow: var(--dur-slow);
+  --default-transition-duration: var(--dur-fast);
+  --default-transition-timing-function: var(--ease-out);
+  /* Plan 47: the step between cells appearing in order when a grid opens (ODDHALLS_LAYOUT_PLAN 6). */
+  --stagger: 60ms;
+  /*
+   * Plan 49 (ODDHALLS_LAYOUT_PLAN 6): the check's stroke, and how long a finished job's ring holds its check before
+   * the toast says what landed (a hold, not a flourish).
+   */
+  --dur-check: 160ms;
+  --dur-hold: 400ms;
+  /* Plan 49: Tailwind's spinner and pulse follow the duration tokens, so reduced motion stops them too. */
+  --animate-spin: spin calc(var(--dur-slow) * 3) linear infinite;
+  --animate-pulse: pulse calc(var(--dur-slow) * 6) var(--ease-out) infinite;
+}
+
+@supports (color: oklch(0 0 0)) {
+  :root {
+    --color-stage: oklch(0.17 0 0);
+    --color-stage-mid: oklch(0.56 0 0);
+    --color-canvas: oklch(0.22 0.004 75);
+    --color-panel: oklch(0.25 0.006 75);
+    --color-panel-2: oklch(0.29 0.006 75);
+    --color-panel-3: oklch(0.33 0.007 75);
+    --color-hairline: oklch(1 0 0 / 0.07);
+    --color-line: oklch(1 0 0 / 0.12);
+    --color-fg: oklch(0.93 0.005 75);
+    --color-fg-2: oklch(0.72 0.006 75);
+    --color-fg-muted: oklch(0.58 0.006 75);
+    --color-accent: oklch(0.8 0.11 80);
+    --color-accent-ink: oklch(0.22 0.02 80);
+    --color-accent-soft: oklch(0.8 0.11 80 / 0.14);
+    --color-danger: oklch(0.66 0.19 25);
+    --color-warn: oklch(0.75 0.15 55);
+    --color-ok: oklch(0.74 0.12 150);
+    --color-guide: oklch(0.78 0.1 230);
+  }
+}
+
+/* Reduced motion: every duration is zero at the token level, so no component checks it again. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+    --dur-check: 0ms;
+    --dur-hold: 0ms;
+    --stagger: 0ms;
+  }
 }
 
 @layer base {
@@ -28,33 +129,334 @@
     @apply bg-canvas text-fg font-sans antialiased;
     font-size: 13px;
     overflow: hidden;
+  }
+
+  /*
+   * Plan 43, the Tauri artifacts: nothing in the chrome can be selected, dragged as a ghost image or long-pressed,
+   * and nothing bounces. Text fields (and anything marked `.selectable`) opt back in to selection, their children too
+   * (a non-selectable node inside a `contenteditable` cannot be edited); a utility such as `select-text` still wins
+   * over this layer.
+   */
+  * {
+    -webkit-user-select: none;
     user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  input,
+  textarea,
+  [contenteditable],
+  [contenteditable] *,
+  .selectable,
+  .selectable * {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  img,
+  svg,
+  canvas {
+    -webkit-user-drag: none;
+  }
+
+  /* A stray selection in the chrome stays invisible; inside a text field it shows. */
+  ::selection {
+    background-color: transparent;
+  }
+
+  input::selection,
+  textarea::selection,
+  [contenteditable]::selection,
+  [contenteditable] *::selection,
+  .selectable::selection,
+  .selectable *::selection,
+  .select-text::selection,
+  .select-text *::selection {
+    background-color: var(--color-accent-soft);
+  }
+
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+
+  /*
+   * Plan 49, the accessibility sweep: a keyboard focus is always visible and always the accent. A control that draws
+   * no focus style of its own gets this outline instead of the browser's; one with `outline-none` and its own ring (the
+   * primitives' `focusRing`) keeps that, since utilities win over this layer.
+   */
+  :where(button, a[href], summary, select, [role="button"], [role="switch"], [tabindex="0"]):focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
 }
 
-@utility label {
-  font-size: 11px;
+/* Plan 44: a section title is sentence case, 12 px, medium, `fg-2` (was the 11 px uppercase `label`). */
+@utility section-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-fg-2);
+}
+
+/* A tag: 10 px mono uppercase (formats, kinds, short states). */
+@utility tag {
+  font-family: var(--font-mono);
+  font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--color-fg-muted);
 }
 
+/*
+ * Plan 43: every scroll container. Thin (8 px), the thumb shows only while the container is hovered, and a scroll
+ * that reaches the end stays in the container. Panels add `[scrollbar-gutter:stable]` so their content never shifts
+ * when the bar appears; surfaces that scroll by wheel or drag only hide the bar instead
+ * (`[&::-webkit-scrollbar]:hidden`).
+ */
+@utility scrollbar {
+  overscroll-behavior: contain;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track,
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background-clip: padding-box;
+    background-color: transparent;
+  }
+
+  &:hover::-webkit-scrollbar-thumb {
+    background-color: rgb(255 255 255 / 0.18);
+  }
+}
+
+/* The Design desk's dot grid; plan 48 made it fainter: the hairline at half strength. */
+/*
+ * Plan 46: the render dot's pulse (a late preview), timed by the slow token: three `--dur-slow` a beat, and still
+ * under reduced motion, where the token is zero.
+ */
+@keyframes pulse-dot {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@utility pulse-dot {
+  animation: pulse-dot calc(var(--dur-slow) * 3) var(--ease-out) infinite;
+}
+
+/*
+ * Plan 47: the Cull grid's motion (ODDHALLS_UI_PLAN 3, 4.4; ODDHALLS_LAYOUT_PLAN 6). Stars pop and the keep flag
+ * stamps when they change; a grid that opens shows its cells in order, `--stagger` apart (each cell sets its index
+ * `--i`; the grid sets `--first`, its first cell drawn, and `--cap`), only while the grid carries `data-opening`. All
+ * of it is timed by the tokens, so it is still under reduced motion.
+ */
+@keyframes star-pop {
+  50% {
+    transform: scale(1.25);
+  }
+}
+
+@keyframes flag-stamp {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+}
+
+@keyframes cell-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@utility star-pop {
+  animation: star-pop var(--dur-fast) var(--ease-out);
+}
+
+@utility flag-stamp {
+  animation: flag-stamp var(--dur-base) var(--ease-out);
+}
+
+[data-opening] .cell-in {
+  animation: cell-in var(--dur-base) var(--ease-out) both;
+  animation-delay: calc(var(--stagger) * clamp(0, var(--i, 0) - var(--first, 0), var(--cap, 24)));
+}
+
+/*
+ * Plan 47: Survey's tile removal (`document.startViewTransition`, feature-detected; a cut without it). Each tile is
+ * named and classed `survey-tile`; the removed one shrinks to nothing while the others move to their new places.
+ */
+@keyframes tile-out {
+  to {
+    transform: scale(0);
+    opacity: 0;
+  }
+}
+
+::view-transition-group(.survey-tile) {
+  animation-duration: var(--dur-base);
+  animation-timing-function: var(--ease-out);
+}
+
+::view-transition-old(.survey-tile):only-child {
+  animation: tile-out var(--dur-base) var(--ease-out) both;
+}
+
+/*
+ * Plan 49: the stage crossfade (ODDHALLS_UI_PLAN 4.4). A route change between stages runs as a view transition
+ * (`lib/viewTransition.ts`, feature-detected; a cut without it): the panels crossfade over `slow`, and the picture
+ * (`stage-picture`: One's picture in Cull, the Develop picture) moves from where it was to where it lands.
+ */
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-group(stage-picture),
+::view-transition-old(stage-picture),
+::view-transition-new(stage-picture) {
+  animation-duration: var(--dur-slow);
+  animation-timing-function: var(--ease-out);
+}
+
+/*
+ * Plan 49: a finished job's beat (ODDHALLS_LAYOUT_PLAN 6). The ring completes and its check draws (`--dur-check`),
+ * holds `--dur-hold`, then what the job left fades in (`beat-in`) where its running text was (`beat-out`). The
+ * jobs pill leaves the same way (`beat-out`). Zero under reduced motion: the result shows at once.
+ */
+@keyframes beat-hide {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* The result is present (clickable, announced) through the hold; it only fades in after it. */
+@keyframes beat-show {
+  from {
+    opacity: 0;
+  }
+}
+
+@utility beat-out {
+  animation: beat-hide var(--dur-fast) var(--ease-out) var(--dur-hold) both;
+}
+
+@utility beat-in {
+  animation: beat-show var(--dur-fast) var(--ease-out) var(--dur-hold) both;
+}
+
+/* The check's stroke draws in `--dur-check` (the path carries `pathLength="1"`). */
+@keyframes check-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+
+@utility check-draw {
+  stroke-dasharray: 1;
+  animation: check-draw var(--dur-check) var(--ease-out) both;
+}
+
+/*
+ * Plan 49: the Denoise loupe's sweep (ODDHALLS_LAYOUT_PLAN 6). When a result arrives, the noisy crop covers the
+ * loupe and a line sweeps once from left to right, uncovering the result behind it (`slow`).
+ */
+@keyframes loupe-sweep {
+  from {
+    clip-path: inset(0 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 100%);
+  }
+}
+
+@keyframes loupe-sweep-line {
+  from {
+    left: 0%;
+  }
+  to {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+@utility loupe-sweep {
+  animation: loupe-sweep var(--dur-slow) var(--ease-out) both;
+}
+
+@utility loupe-sweep-line {
+  animation: loupe-sweep-line var(--dur-slow) var(--ease-out) both;
+}
+
 @utility dot-grid {
   background-color: var(--color-canvas);
-  background-image: radial-gradient(circle, #2c2c2c 1px, transparent 1px);
+  background-image: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--color-hairline) 50%, transparent) 1px,
+    transparent 1px
+  );
   background-size: 16px 16px;
 }
 
-/* Canvas cursors: a filled photo slot pans when dragged (Alt + drag moves it to another slot). */
-.editor-canvas .pb-photo.pb-editable:not(.pb-photo-empty) {
-  cursor: grab;
+/*
+ * Canvas cursors: a drag on any photo frame moves it (Alt + drag moves the photo to another slot); the frame in
+ * Adjust photo mode (always the only selection, the canvas has `data-adjusting`) pans its photo.
+ */
+.editor-canvas .pb-photo.pb-editable {
+  cursor: move;
 }
 
-.editor-canvas .pb-photo.pb-editable:not(.pb-photo-empty):active {
-  cursor: grabbing;
+.editor-canvas[data-adjusting] .pb-photo.pb-editable.pb-selected {
+  cursor:
+    url("/cursors/pan.svg") 12 12,
+    grab;
+}
+
+.editor-canvas[data-adjusting] .pb-photo.pb-editable.pb-selected:active {
+  cursor:
+    url("/cursors/panning.svg") 12 12,
+    grabbing;
 }
 
 /* Text boxes move when dragged; double-click or Enter edits them. */
 .editor-canvas .pb-text.pb-editable {
   cursor: move;
+}
+
+/*
+ * Plan 49: the tools' own cursors (ODDHALLS_UI_PLAN 4.3): 24 px SVGs in `public/cursors/` (vector, so they should stay
+ * sharp on a 2× screen; how WKWebView rasterises an SVG cursor on Retina is the owner's check), each with a standard
+ * keyword after it for a webview that cannot load one. `cursor-draw`: drawing a frame,
+ * the crop's straighten ruler, a mask gradient; `cursor-rotate`: the crop tool outside the frame; `cursor-pan` and
+ * `cursor-panning`: a picture zoomed past fit, and a frame's photo in Adjust. The mask brush draws its own ring.
+ */
+@utility cursor-draw {
+  cursor:
+    url("/cursors/draw.svg") 12 12,
+    crosshair;
+}
+
+@utility cursor-rotate {
+  cursor:
+    url("/cursors/rotate.svg") 12 12,
+    grab;
+}
+
+@utility cursor-pan {
+  cursor:
+    url("/cursors/pan.svg") 12 12,
+    grab;
+}
+
+@utility cursor-panning {
+  cursor:
+    url("/cursors/panning.svg") 12 12,
+    grabbing;
 }

@@ -1,0 +1,77 @@
+# Cargo workspace: the Tauri editor and the pure-Rust develop pipeline (docs/design/archive/DEVELOP_PLAN.md).
+# Build output goes to /target at the repo root; Cargo.lock lives here too.
+[workspace]
+resolver = "2"
+members = ["apps/editor/src-tauri", "crates/develop"]
+
+# Image decode, resize and hashing are unusably slow unoptimized; keep them fast in dev and tests.
+# This crate is included because fast_image_resize and imageops generics are instantiated here
+# (resize took 630 ms instead of 18 ms at opt-level 0). Incremental builds stay around 2-3 s.
+[profile.dev.package.turbojpeg-sys]
+opt-level = 3
+[profile.dev.package.fast_image_resize]
+opt-level = 3
+[profile.dev.package.image]
+opt-level = 3
+[profile.dev.package.png]
+opt-level = 3
+[profile.dev.package.fdeflate]
+opt-level = 3
+[profile.dev.package.miniz_oxide]
+opt-level = 3
+[profile.dev.package.sha2]
+opt-level = 3
+[profile.dev.package.photobook-editor]
+opt-level = 3
+# The develop pipeline is per-pixel maths; unoptimised it is far too slow even for tests.
+[profile.dev.package.photobook-develop]
+opt-level = 3
+# ICC transforms on decode (D1.2): moxcms builds its LUTs and runs per-pixel maths.
+[profile.dev.package.moxcms]
+opt-level = 3
+# Homography DLT (D2) and later the Upright solve: SVD and small dense matrices.
+[profile.dev.package.nalgebra]
+opt-level = 3
+[profile.dev.package.simba]
+opt-level = 3
+# The GPU path (D3.2): wgpu validates and naga translates WGSL on every pipeline creation; unoptimised,
+# building the pipelines takes seconds instead of milliseconds.
+[profile.dev.package.wgpu]
+opt-level = 3
+[profile.dev.package.wgpu-core]
+opt-level = 3
+[profile.dev.package.wgpu-hal]
+opt-level = 3
+[profile.dev.package.wgpu-types]
+opt-level = 3
+[profile.dev.package.naga]
+opt-level = 3
+# RAW decode (D6.1): rawler's decompressors and demosaic, and the deflate/LZW codecs of compressed DNGs.
+[profile.dev.package.rawler]
+opt-level = 3
+[profile.dev.package.libflate]
+opt-level = 3
+[profile.dev.package.weezl]
+opt-level = 3
+# D4.2: local inference. `ort` is a thin layer over the prebuilt (optimised) ONNX Runtime; the tensors it hands back go
+# through ndarray/half conversions. The downloader's TLS/HTTP stack (rustls, aws-lc, hyper, h2) was tried at
+# opt-level 3 too: no measurable change (about 13 MB/s either way, curl 16 MB/s on the same line), so it is left alone.
+[profile.dev.package.ort]
+opt-level = 3
+[profile.dev.package.ndarray]
+opt-level = 3
+[profile.dev.package.half]
+opt-level = 3
+# The JPEG previews embedded in RAW files (D6.1 proxies) are decoded by `image` through zune-jpeg (about 50 ms for a
+# 20 MP preview like this).
+[profile.dev.package.zune-jpeg]
+opt-level = 3
+[profile.dev.package.zune-core]
+opt-level = 3
+# rawler parses its camera database (TOML) on first use: about 400 ms unoptimised, 70 ms like this.
+[profile.dev.package.toml]
+opt-level = 3
+[profile.dev.package.toml_edit]
+opt-level = 3
+[profile.dev.package.winnow]
+opt-level = 3

@@ -6,7 +6,7 @@ const LANDSCAPE_IN_PORTRAIT: CropFit = { imageAspect: 1.5, slotAspect: 0.8, rota
 
 describe('cropFit', () => {
   const book = {
-    assets: { a: { path: 'a.jpg', width: 3000, height: 2000 }, b: { path: 'b.jpg' } },
+    assets: { a: { path: 'a.jpg', folder: 'F', width: 3000, height: 2000 }, b: { path: 'b.jpg', folder: 'F' } },
     template: { width: 1080, height: 1350 },
   };
 

@@ -1,9 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
-import { type PublishEvent, type PublishRun, type PublishStep, startPublish } from '../../lib/publishRunner';
-import { flush } from '../../store/autosave';
+import { useState } from 'react';
+import { pendingDenoiseCount } from '../../lib/denoiseQueue';
+import type { PublishStep } from '../../lib/publishRunner';
 import { useBookStore } from '../../store/book';
+import { isActive, type JobKind, type JobsState, useJobsStore } from '../../store/jobs';
+import { Button } from '../ui/Button';
+import { cancelPublishSession, startPublishSession, usePublishSession } from './publishSession';
 
 const STEPS: Array<{ id: PublishStep; label: string }> = [
+  { id: 'denoise', label: 'Denoising' },
+  { id: 'develop', label: 'Render edited photos' },
   { id: 'freeze', label: 'Freeze project' },
   { id: 'images', label: 'Image versions' },
   { id: 'pages', label: 'Page images' },
@@ -13,105 +18,60 @@ const STEPS: Array<{ id: PublishStep; label: string }> = [
   { id: 'site', label: 'Site file' },
 ];
 
-type StepState = {
-  status: 'pending' | 'running' | 'done' | 'skipped';
-  ms?: number;
-  detail?: string;
-  progress?: { done: number; total: number; detail?: string };
-};
-
 const fmtMs = (ms: number) => (ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`);
+
+/** How many of `ids` (the publish's gate jobs) of `kind` are still queued or running. */
+const pendingOf = (s: JobsState, ids: readonly string[], kind: JobKind) =>
+  ids.filter((id) => {
+    const job = s.jobs[id];
+    return job?.kind === kind && isActive(job);
+  }).length;
+
+/** "3 photos still rendering · 1 still denoising" from the queue, or null when none of the publish's are left. */
+export function pendingPhotosText(rendering: number, denoising: number): string | null {
+  const photos = (n: number) => (n === 1 ? '1 photo' : `${n} photos`);
+  const parts = [
+    ...(rendering > 0 ? [`${photos(rendering)} still rendering`] : []),
+    ...(denoising > 0 ? [`${photos(denoising)} still denoising`] : []),
+  ];
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
 
 /**
  * Step 2.7: runs the publish CLI for the open book and streams its progress: one row per step
  * with timing, a log of warnings, and on success the reader link with a copy button. The publish
- * record (`lastPublishedAt`, `publishedFingerprint`) is written into the open document here, the
+ * record (`lastPublishedAt`, `publishedFingerprint`) is written into the open document when the run succeeds; the
  * CLI runs with `--no-record` because the editor owns the project file.
+ *
+ * Plan 09: the run is a `publish` job (`publishSession.ts`) that waits for its denoise and render jobs; the dialog
+ * shows how many of the project's photos are still in the queue. Closing the dialog leaves the run going (the jobs
+ * bar has it); reopening it shows the run again.
  */
 export function PublishPanel({ onClose }: { onClose: () => void }) {
-  const folder = useBookStore((s) => s.folder);
+  const project = useBookStore((s) => s.projectId);
   const slug = useBookStore((s) => s.book?.publish.slug ?? '');
-  const setPublish = useBookStore((s) => s.setPublish);
+  const session = usePublishSession();
+  const mine = session.project === project;
+  const phase = mine ? session.phase : 'idle';
+  const steps = mine ? session.steps : {};
+  const log = mine ? session.log : [];
+  const result = mine ? session.result : null;
+  const error = mine ? session.error : null;
+  const gateJobs = mine ? session.gateJobs : [];
+  const rendering = useJobsStore((s) => pendingOf(s, gateJobs, 'render'));
+  const denoising = useJobsStore((s) => pendingOf(s, gateJobs, 'denoise'));
+  const pending = phase === 'running' ? pendingPhotosText(rendering, denoising) : null;
+  // Plan 27: denoise queued ahead of time (Denoise selected, Apply, leaving a photo) for this book's photos.
+  const book = useBookStore((s) => s.book);
+  const queuedDenoise = useJobsStore((s) => pendingDenoiseCount(s, book));
   const [dryRun, setDryRun] = useState(false);
   const [prune, setPrune] = useState(false);
-  const [phase, setPhase] = useState<'idle' | 'running' | 'done' | 'failed'>('idle');
-  const [steps, setSteps] = useState<Record<string, StepState>>({});
-  const [log, setLog] = useState<string[]>([]);
-  const [result, setResult] = useState<Extract<PublishEvent, { type: 'result' }> | null>(null);
-  const [error, setError] = useState<{ message: string; keys?: string[] } | null>(null);
   const [copied, setCopied] = useState(false);
-  const runRef = useRef<PublishRun | null>(null);
 
-  useEffect(
-    () => () => {
-      void runRef.current?.cancel();
-    },
-    [],
-  );
-
-  const onEvent = (e: PublishEvent) => {
-    switch (e.type) {
-      case 'step':
-        setSteps((s) => ({
-          ...s,
-          [e.step]: {
-            ...s[e.step],
-            status: e.status === 'start' ? 'running' : e.status,
-            ms: e.ms,
-            detail: e.detail ?? s[e.step]?.detail,
-          },
-        }));
-        break;
-      case 'progress':
-        setSteps((s) => ({
-          ...s,
-          [e.step]: {
-            ...(s[e.step] ?? { status: 'running' }),
-            progress: { done: e.done, total: e.total, detail: e.detail },
-          },
-        }));
-        break;
-      case 'log':
-        if (e.level === 'warn') setLog((l) => [...l, e.message]);
-        break;
-      case 'result':
-        setResult(e);
-        break;
-      case 'error':
-        setError({ message: e.message, keys: e.keys });
-        break;
-      case 'raw':
-        if (e.stream === 'stderr' && e.line.trim()) setLog((l) => [...l, e.line]);
-        break;
-    }
-  };
-
-  const start = async () => {
-    if (!folder) return;
-    setPhase('running');
-    setSteps({});
-    setLog([]);
-    setResult(null);
-    setError(null);
+  const start = () => {
     setCopied(false);
-    // The CLI reads the project file from disk: write pending edits first.
-    await flush();
-    const run = await startPublish({ command: 'publish', folder, dryRun, prune }, onEvent);
-    runRef.current = run;
-    const code = await run.done;
-    runRef.current = null;
-    setPhase(code === 0 ? 'done' : 'failed');
-    if (code !== 0 && code !== null)
-      setError((err) => err ?? { message: `The publish command exited with code ${code}` });
-    if (code === null) setError((err) => err ?? { message: 'Cancelled' });
+    void startPublishSession({ dryRun, prune });
   };
-
-  // Record the publish in the document once the CLI reports success (not for dry runs).
-  useEffect(() => {
-    if (phase === 'done' && result && !result.dryRun) {
-      setPublish({ lastPublishedAt: result.publishedAt, publishedFingerprint: result.fingerprint });
-    }
-  }, [phase, result, setPublish]);
 
   const link = result?.link ?? result?.url ?? null;
   const copy = async () => {
@@ -125,12 +85,12 @@ export function PublishPanel({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    // biome-ignore lint/a11y/noStaticElementInteractions: backdrop click closes the dialog; Escape is handled by the Close button focus
+    // biome-ignore lint/a11y/noStaticElementInteractions: backdrop click closes the dialog (a running publish goes on); Escape is handled by the Close button focus
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-black/60"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-stage/60"
       role="presentation"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget && phase !== 'running') onClose();
+        if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
@@ -146,8 +106,8 @@ export function PublishPanel({ onClose }: { onClose: () => void }) {
         {phase === 'idle' && (
           <div className="space-y-3 text-xs">
             <p className="text-fg-muted leading-relaxed">
-              Freezes the project, derives the image versions, uploads what is new to R2 and rewrites the manifest and
-              site file. Settings come from the Settings screen.
+              Renders edited photos at full size, freezes the project, derives the image versions, uploads what is new
+              to R2 and rewrites the manifest and site file. Settings come from the Settings screen.
             </p>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={dryRun} onChange={(e) => setDryRun(e.target.checked)} />
@@ -157,6 +117,11 @@ export function PublishPanel({ onClose }: { onClose: () => void }) {
               <input type="checkbox" checked={prune} onChange={(e) => setPrune(e.target.checked)} />
               Prune objects this book no longer uses
             </label>
+            {queuedDenoise > 0 && (
+              <p className="text-fg-muted" data-testid="publish-queued-denoise">
+                {pendingPhotosText(0, queuedDenoise)}; Publish waits for them.
+              </p>
+            )}
           </div>
         )}
 
@@ -164,12 +129,14 @@ export function PublishPanel({ onClose }: { onClose: () => void }) {
           <ol className="space-y-1.5 text-xs">
             {STEPS.map(({ id, label }) => {
               const st = steps[id];
+              // Only books with edited photos have this step.
+              if ((id === 'develop' || id === 'denoise') && !st) return null;
               const status = st?.status ?? 'pending';
               const icon = status === 'done' ? '✓' : status === 'running' ? '…' : status === 'skipped' ? '–' : '·';
               return (
                 <li key={id} className={`flex items-baseline gap-2 ${status === 'pending' ? 'text-fg-muted/60' : ''}`}>
                   <span className="w-3 text-center">{icon}</span>
-                  <span className="w-32">{label}</span>
+                  <span className="w-36">{label}</span>
                   <span className="min-w-0 flex-1 truncate text-fg-muted">
                     {status === 'running' && st?.progress
                       ? `${st.progress.done} / ${st.progress.total}${st.progress.detail ? ` · ${st.progress.detail}` : ''}`
@@ -182,17 +149,23 @@ export function PublishPanel({ onClose }: { onClose: () => void }) {
           </ol>
         )}
 
+        {pending && (
+          <p className="mt-3 text-fg-muted text-xs" data-testid="publish-pending">
+            {pending}
+          </p>
+        )}
+
         {log.length > 0 && (
-          <pre className="mt-3 max-h-32 overflow-auto rounded-md bg-panel-2 p-2 font-mono text-[11px] text-amber-300/90 leading-relaxed">
+          <pre className="scrollbar mt-3 max-h-32 overflow-auto rounded-md bg-panel-2 p-2 font-mono text-[11px] text-warn/90 leading-relaxed">
             {log.join('\n')}
           </pre>
         )}
 
         {error && (
-          <div className="mt-3 rounded-md border border-red-500/40 bg-red-500/10 p-2 text-red-300 text-xs">
+          <div className="mt-3 rounded-md border border-danger/40 bg-danger/10 p-2 text-danger text-xs">
             <p>{error.message}</p>
             {error.keys && (
-              <pre className="mt-1 max-h-24 overflow-auto font-mono text-[11px]">{error.keys.join('\n')}</pre>
+              <pre className="scrollbar mt-1 max-h-24 overflow-auto font-mono text-[11px]">{error.keys.join('\n')}</pre>
             )}
           </div>
         )}
@@ -212,44 +185,30 @@ export function PublishPanel({ onClose }: { onClose: () => void }) {
                   aria-label="Published link"
                   className="min-w-0 flex-1 rounded-md border border-line bg-panel-2 px-2 py-1 font-mono text-[11px]"
                 />
-                <button
-                  type="button"
-                  onClick={copy}
-                  className="rounded-md border border-line px-2.5 py-1 hover:border-accent"
-                >
+                <Button size="sm" onClick={copy}>
                   {copied ? 'Copied' : 'Copy'}
-                </button>
+                </Button>
               </div>
             )}
           </div>
         )}
 
         <div className="mt-5 flex justify-end gap-2 text-xs">
-          {phase === 'running' ? (
-            <button
-              type="button"
-              onClick={() => void runRef.current?.cancel()}
-              className="rounded-md border border-line px-3 py-1.5 hover:border-red-400"
-            >
+          {phase === 'running' && (
+            <Button variant="danger" onClick={cancelPublishSession}>
               Cancel
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-md border border-line px-3 py-1.5 hover:border-accent"
-            >
-              Close
-            </button>
+            </Button>
           )}
+          <Button
+            onClick={onClose}
+            title={phase === 'running' ? 'The publish goes on in the background (see the jobs list)' : undefined}
+          >
+            Close
+          </Button>
           {phase !== 'running' && (
-            <button
-              type="button"
-              onClick={() => void start()}
-              className="rounded-md bg-accent px-3 py-1.5 text-white hover:brightness-110"
-            >
+            <Button variant="primary" onClick={start}>
               {phase === 'idle' ? (dryRun ? 'Run dry run' : 'Publish') : 'Run again'}
-            </button>
+            </Button>
           )}
         </div>
       </div>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Gallery 30</title>
+  <rect width="64" height="64" rx="14" fill="#c2502b"/>
+  <rect x="17" y="12" width="30" height="40" rx="2.5" fill="#fbf7f0"/>
+  <rect x="21" y="16" width="22" height="18" rx="1" fill="#e9a27f"/>
+  <path d="M21 31l6-7 5 5 3-3 8 9H21z" fill="#c2502b"/>
+  <rect x="21" y="39" width="14" height="2.5" rx="1.25" fill="#1c1a17"/>
+  <rect x="21" y="44" width="9" height="2.5" rx="1.25" fill="#8f877a"/>
+</svg>

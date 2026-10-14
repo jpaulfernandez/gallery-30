@@ -1,0 +1,36 @@
+# External tools the editor downloads on demand (workflow plan 16), never bundled. Compiled into the app
+# (`commands/tools.rs`). Like crates/develop/models.toml, every download is pinned: url, bytes and sha256 of the file,
+# plus the program inside it (`member`) and that program's own size and sha256, checked again after extraction.
+# Permissive or LGPL licences only (no GPL builds: the app is not GPL).
+
+[[tool]]
+name = "ffmpeg"
+title = "FFmpeg 6.0"
+version = "6.0-ae-ffmpeg-1.2.0"
+# Auto-Editor's static FFmpeg build, published on PyPI as `ae-ffmpeg`. Checked 2026-10-13: the package metadata and the
+# wheel's LICENSE.txt say LGPL v3; the configure line inside the binary has --enable-version3 and
+# --enable-videotoolbox, and no --enable-gpl, --enable-nonfree, libx264 or libx265. Slideshows encode H.264 with
+# Apple's VideoToolbox (`h264_videotoolbox`). FFmpeg's source: https://ffmpeg.org/releases/ffmpeg-6.0.tar.xz
+licence = "LGPL-3.0-or-later"
+licence_url = "https://pypi.org/project/ae-ffmpeg/1.2.0/"
+homepage = "https://github.com/WyattBlue/auto-editor"
+
+[[tool.download]]
+os = "macos"
+arch = "aarch64"
+url = "https://files.pythonhosted.org/packages/ad/0a/7939207a75dc47ef7defe1fe120fa060a946bd98398a68cffc5022b2210a/ae_ffmpeg-1.2.0-py3-none-macosx_11_0_arm64.whl"
+bytes = 9533716
+sha256 = "6f0a1a0509dc148c228cae919a3dd2fef69bd176efa2c5bf5fd26a157460ca70"
+member = "ae_ffmpeg/Darwin-arm64/ffmpeg"
+member_bytes = 21429400
+member_sha256 = "3dd1da7c16d6f3e9aa3dc647a163617731850edeb7d4b607480ba870826dc336"
+
+[[tool.download]]
+os = "macos"
+arch = "x86_64"
+url = "https://files.pythonhosted.org/packages/2e/79/36702caf08ecd72ddcb01a6b336cedc14bb880b4bb4ebfe9b9e0314df472/ae_ffmpeg-1.2.0-py3-none-macosx_10_9_x86_64.whl"
+bytes = 8549610
+sha256 = "8a8bfd3bf7ac6c63b15d054aec5bcfc06c2850025e5564ad44bbd3948ca19a0c"
+member = "ae_ffmpeg/Darwin-x86_64/ffmpeg"
+member_bytes = 20684608
+member_sha256 = "b4ee739b30994fbcc42ab582c12dec118ebb1d4bd6a0c04157a7ebee874ed967"

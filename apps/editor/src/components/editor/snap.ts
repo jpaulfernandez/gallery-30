@@ -2,6 +2,7 @@ import {
   type BookTemplate,
   type Frame,
   inchFraction,
+  pageGuideLines,
   resolveTheme,
   type SnapFrameOptions,
   type SnapGuide,
@@ -12,14 +13,18 @@ import {
 } from '@photobook/shared';
 import { useCallback } from 'react';
 import { create } from 'zustand';
-import { useBookStore } from '../../store/book';
+import { tick } from '../../lib/haptic';
+import { currentDesignBook } from '../../store/design';
 import { effectiveZoom, PAGE_PX_PER_UNIT, useUiStore } from '../../store/ui';
 
 /**
  * Snapping for frames dragged on the canvas: a thin layer over the shared engine (`snapFrame`)
  * that fills in what the editor knows (the page's other frames, the resolved theme, the template,
  * a threshold of SNAP_THRESHOLD_PX screen px at the current zoom) and publishes the guides the
- * last snap produced, so the canvas overlay can draw them while the drag lasts.
+ * last snap produced, so the canvas overlay can draw them while the drag lasts. The engine's smart
+ * guides (equal spacing on a move, size match on a resize; workflow plan 30) come with spans the
+ * overlay draws as measures, labelled by `smartBadges`. The page's ruler guides (`page.guides`,
+ * workflow plan 31) join the candidates while rulers are shown; hidden guides do not snap.
  */
 
 /** How close (CSS px on screen) an edge must come to a guide to snap. */
@@ -31,6 +36,8 @@ export interface SnapRequest {
   pageId: string;
   /** The element being dragged (left out of the frames it snaps to). */
   elementId: string;
+  /** More elements dragged along (a multi-selection moves as one box): also left out. */
+  excludeIds?: readonly string[];
   /** Where the pointer would put the frame, unsnapped. */
   frame: Frame;
   /** What is being dragged: the whole frame (a move) or one edge or corner (a resize). */
@@ -39,14 +46,20 @@ export interface SnapRequest {
   lockRatio?: boolean;
   /** Skip snapping for this event (Cmd held). */
   bypass?: boolean;
+  /** No size-match lines (a resize from the centre, Alt). */
+  noSizeMatch?: boolean;
 }
 
 /** A distance label at a gap snap, centred in the gap (page fractions). */
 export interface GapBadge {
   x: number;
   y: number;
-  /** "gutter · 0.20 in", "wide · 0.40 in". */
+  /** "gutter · 0.20 in", "wide · 0.40 in", "equal · 0.35 in", "same width · 2.00 in". */
   label: string;
+  /** `size` badges sit on the dimension line drawn just outside the frame (see CanvasGuides). */
+  kind?: 'gap' | 'equal' | 'size';
+  /** `size` badges: the guide's axis (x: above the frame, y: left of it). */
+  axis?: SnapGuide['axis'];
 }
 
 export interface SnapResult {
@@ -72,6 +85,8 @@ export const NO_BADGES: GapBadge[] = [];
 export function setSnapGuides(pageId: string | null, guides: SnapGuide[], badges: GapBadge[] = NO_BADGES): void {
   const prev = useSnapGuides.getState();
   if (prev.guides.length === 0 && guides.length === 0) return;
+  // Plan 46: a frame landing on a guide (a drag, a resize or a nudge's flash) clicks once.
+  if (prev.guides.length === 0) tick('alignment');
   useSnapGuides.setState({
     pageId,
     guides: guides.length > 0 ? guides : NO_GUIDES,
@@ -126,9 +141,55 @@ export function gapBadges(
   return out;
 }
 
+/**
+ * Badges for the equal-spacing and size-match guides (workflow plan 30): "equal · 0.35 in" in each
+ * equal gap (folded into a gap badge already there: "gutter · 0.20 in · equal"), and "same width ·
+ * 2.00 in" (or height) on the resized frame's dimension line.
+ */
+export function smartBadges(
+  guides: readonly SnapGuide[],
+  template: Pick<BookTemplate, 'width' | 'height'>,
+  gapBadgesAlready: readonly GapBadge[] = NO_BADGES,
+): GapBadge[] {
+  const out: GapBadge[] = [];
+  const merged = gapBadgesAlready.map((b) => ({ ...b }));
+  for (const g of guides) {
+    if (!g.spans || !g.label) continue;
+    const ax = g.axis === 'x';
+    const inch = inchFraction(template, g.axis);
+    const place = (from: number, to: number, at: number) => ({
+      x: ax ? (from + to) / 2 : at,
+      y: ax ? at : (from + to) / 2,
+    });
+    if (g.kind === 'equal') {
+      for (const span of g.spans) {
+        const p = place(span.from, span.to, span.at);
+        const twin = merged.find((b) => Math.abs(b.x - p.x) < EPS && Math.abs(b.y - p.y) < EPS);
+        if (twin) {
+          if (!twin.label.endsWith(' · equal')) twin.label = `${twin.label} · equal`;
+          continue;
+        }
+        if (out.some((b) => Math.abs(b.x - p.x) < EPS && Math.abs(b.y - p.y) < EPS)) continue;
+        out.push({ ...p, label: `equal · ${((span.to - span.from) / inch).toFixed(2)} in`, kind: 'equal' });
+      }
+    } else if (g.kind === 'size') {
+      const span = g.spans[0];
+      if (!span) continue;
+      const p = place(span.from, span.to, span.at);
+      out.push({
+        ...p,
+        label: `${g.label} · ${((span.to - span.from) / inch).toFixed(2)} in`,
+        kind: 'size',
+        axis: g.axis,
+      });
+    }
+  }
+  return [...merged, ...out];
+}
+
 /** Snap threshold as a fraction of the page width, at the current zoom. */
 export function snapThreshold(): number {
-  const book = useBookStore.getState().book;
+  const book = currentDesignBook();
   const pageWidthPx = effectiveZoom(useUiStore.getState()) * (book?.template.width ?? 1080) * PAGE_PX_PER_UNIT;
   return pageWidthPx > 0 ? SNAP_THRESHOLD_PX / pageWidthPx : 0;
 }
@@ -139,17 +200,23 @@ export function snapThreshold(): number {
  * is gone.
  */
 export function snapElementFrame(req: SnapRequest): SnapResult {
-  const book = useBookStore.getState().book;
+  const book = currentDesignBook();
   const page = book?.pages.find((p) => p.id === req.pageId);
-  if (!book || !page || req.bypass || !useUiStore.getState().snapEnabled) {
+  const ui = useUiStore.getState();
+  if (!book || !page || req.bypass || !ui.snapEnabled) {
     return { frame: req.frame, guides: NO_GUIDES, badges: NO_BADGES };
   }
-  const others = page.elements.filter((e) => e.id !== req.elementId).map((e) => e.frame);
+  const others = page.elements
+    .filter((e) => e.id !== req.elementId && !req.excludeIds?.includes(e.id))
+    .map((e) => e.frame);
   const theme = resolveTheme(book.theme);
   const options: SnapFrameOptions = { threshold: snapThreshold(), handle: req.handle };
   if (req.lockRatio) options.lockRatio = true;
+  if (req.noSizeMatch) options.sizeMatch = false;
+  if (ui.showRulers && page.guides.length > 0) options.extraLines = pageGuideLines(page.guides);
   const { frame, guides } = snapFrame(req.frame, others, theme, book.template, options);
-  return { frame, guides, badges: gapBadges(frame, guides, others, theme, book.template) };
+  const badges = smartBadges(guides, book.template, gapBadges(frame, guides, others, theme, book.template));
+  return { frame, guides, badges };
 }
 
 export interface UseSnap {
